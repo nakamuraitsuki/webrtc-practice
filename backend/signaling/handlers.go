@@ -24,7 +24,7 @@ func (h *WebSocketHandler) Register(g *echo.Group) {
 	g.GET("", h.HandleConnection)
 }
 
-// WebSocket接続の処理
+// webSocket接続の処理
 func (h *WebSocketHandler) HandleConnection(c echo.Context) error{
 	// WebSocketの接続を確立
 	upgrader := websocket.Upgrader{
@@ -38,7 +38,7 @@ func (h *WebSocketHandler) HandleConnection(c echo.Context) error{
 	conn, err := upgrader.Upgrade(resp, req, nil)
 	if err != nil {
 		log.Println("Error upgrading connection:", err)
-		
+
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "Failed to establish WebSocket connection",
 		})
