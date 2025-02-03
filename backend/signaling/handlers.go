@@ -14,10 +14,14 @@ type WebSocketService struct {
 
 type WebSocketHandler struct {
 	service *WebSocketService
+	upgrader websocket.Upgrader
 }
 
-func NewWebSocketHandler(service *WebSocketService) *WebSocketHandler {
-	return &WebSocketHandler{service: service}
+func NewWebSocketHandler(service *WebSocketService, upgrader websocket.Upgrader) *WebSocketHandler {
+	return &WebSocketHandler{
+		service: service,
+		upgrader: upgrader,
+	}
 }
 
 func (h *WebSocketHandler) Register(g *echo.Group) {
@@ -26,16 +30,10 @@ func (h *WebSocketHandler) Register(g *echo.Group) {
 
 // webSocket接続の処理
 func (h *WebSocketHandler) HandleConnection(c echo.Context) error{
-	// WebSocketの接続を確立
-	upgrader := websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool { return true },
-	}
-
 	req := c.Request()
-
 	resp := c.Response().Writer
 	
-	conn, err := upgrader.Upgrade(resp, req, nil)
+	conn, err := h.upgrader.Upgrade(resp, req, nil)
 	if err != nil {
 		log.Println("Error upgrading connection:", err)
 
