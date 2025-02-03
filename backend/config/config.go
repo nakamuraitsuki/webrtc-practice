@@ -1,8 +1,6 @@
 package config
 
-import (
-	"os"
-)
+import	"os"
 
 type Config struct {
 	Port string
@@ -15,7 +13,7 @@ func LoadConfig() *Config {
 }
 
 func getEnv(key, fallback string) string {
-	
+
 	if value, exists := os.LookupEnv(key); exists {
 		return value
 	}
