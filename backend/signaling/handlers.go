@@ -1,6 +1,7 @@
 package signaling
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -14,6 +15,7 @@ type WebSocketService struct {
 
 type WebSocketHandler struct {
 	service *WebSocketService
+	manager *WebsocketManager
 	upgrader websocket.Upgrader
 }
 
@@ -45,6 +47,37 @@ func (h *WebSocketHandler) HandleConnection(c echo.Context) error{
 
 	// 接続時の処理
 	log.Println("New WebSocket connection established on port", h.service.Port)
+
+	//メッセージ受信待機ループ
+	for {
+		//クライアントからメッセージを受け取る
+		_, message, err := conn.ReadMessage()
+
+		//新規かどうか確認
+		if _, ok := h.manager.clients[conn]; !ok {
+			//新規接続
+			var jsonStr = string(message)
+			var data map[string]interface{}
+			err := json.Unmarshal([]byte(jsonStr), &data)
+			if err != nil {
+				panic(err)
+			}
+
+			//id登録
+			id := data["id"].(string)
+			h.manager.AddClient(conn, id)
+		}
+
+		if err != nil {
+			log.Println(err)
+			h.manager.RemoveClient(conn)
+			break
+		}
+
+		//ブロードキャストにpush
+		h.manager.broadcast <- message
+	}
+	
 
 	return nil
 }
