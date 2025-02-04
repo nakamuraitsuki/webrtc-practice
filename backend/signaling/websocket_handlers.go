@@ -78,6 +78,6 @@ func (h *WebSocketHandler) HandleConnection(c echo.Context) error{
 		h.manager.broadcast <- message
 	}
 	
-
+	h.manager.ResetOfferID()
 	return nil
 }
