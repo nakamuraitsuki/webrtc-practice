@@ -15,7 +15,7 @@ type WebSocketService struct {
 
 type WebSocketHandler struct {
 	service *WebSocketService
-	manager *WebSocketManager
+	manager *SignalingManager
 	upgrader websocket.Upgrader
 }
 

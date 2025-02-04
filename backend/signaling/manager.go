@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type WebSocketManager struct {
+type SignalingManager struct {
 	clients		map[*websocket.Conn]string	// クライアントの接続状況（Conn → ID）
 	clientsByID map[string]*websocket.Conn	// クライアントのIDごとの接続情報
 	broadcast	chan []byte					// ブロードキャスト用のチャネル
@@ -16,8 +16,8 @@ type WebSocketManager struct {
 	mu 			sync.Mutex					// データ競合を防ぐためのミューテックス
 }
 
-func NweWebSocketManager() *WebSocketManager {
-	return &WebSocketManager{
+func NweSignalingManager() *SignalingManager {
+	return &SignalingManager{
 		clients: 		make(map[*websocket.Conn]string),
 		clientsByID: 	make(map[string]*websocket.Conn),
 		broadcast: 		make(chan []byte),
@@ -27,7 +27,7 @@ func NweWebSocketManager() *WebSocketManager {
 }
 
 //新しいクライアントの追加
-func (wm *WebSocketManager) AddClient(conn *websocket.Conn, id string) {
+func (wm *SignalingManager) AddClient(conn *websocket.Conn, id string) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
@@ -36,7 +36,7 @@ func (wm *WebSocketManager) AddClient(conn *websocket.Conn, id string) {
 }
 
 //クライアントの削除
-func (wm *WebSocketManager) RemoveClient(conn *websocket.Conn) {
+func (wm *SignalingManager) RemoveClient(conn *websocket.Conn) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
@@ -48,7 +48,7 @@ func (wm *WebSocketManager) RemoveClient(conn *websocket.Conn) {
 }
 
 //SDP情報保存
-func (wm *WebSocketManager) SaveSDP(id, sdp string) {
+func (wm *SignalingManager) SaveSDP(id, sdp string) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
@@ -56,7 +56,7 @@ func (wm *WebSocketManager) SaveSDP(id, sdp string) {
 }
 
 //ICE Candidate保存
-func (wm *WebSocketManager) SaveCandidate(id, candidate string) {
+func (wm *SignalingManager) SaveCandidate(id, candidate string) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
@@ -64,7 +64,7 @@ func (wm *WebSocketManager) SaveCandidate(id, candidate string) {
 }
 
 //Candidateを取得
-func (wm *WebSocketManager) GetCandidate(id string) ([]string, bool) {
+func (wm *SignalingManager) GetCandidate(id string) ([]string, bool) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
@@ -74,7 +74,7 @@ func (wm *WebSocketManager) GetCandidate(id string) ([]string, bool) {
 }
 
 //offerIdをセット
-func (wm *WebSocketManager) SetOfferID(id string) {
+func (wm *SignalingManager) SetOfferID(id string) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
@@ -82,7 +82,7 @@ func (wm *WebSocketManager) SetOfferID(id string) {
 }
 
 //offerId取得
-func (wm *WebSocketManager) GetOfferID() string {
+func (wm *SignalingManager) GetOfferID() string {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
@@ -90,7 +90,7 @@ func (wm *WebSocketManager) GetOfferID() string {
 }
 
 //offerIdをリセット
-func (wm *WebSocketManager) ResetOfferID() {
+func (wm *SignalingManager) ResetOfferID() {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
@@ -98,7 +98,7 @@ func (wm *WebSocketManager) ResetOfferID() {
 }
 
 //offerIdの存在確認
-func (wm *WebSocketManager) IsOfferIDSet() bool {
+func (wm *SignalingManager) IsOfferIDSet() bool {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
