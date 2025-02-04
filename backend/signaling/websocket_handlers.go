@@ -27,11 +27,11 @@ func NewWebSocketHandler(service *WebSocketService, upgrader websocket.Upgrader)
 }
 
 func (h *WebSocketHandler) Register(g *echo.Group) {
-	g.GET("", h.HandleConnection)
+	g.GET("", h.HandleWebSocket)
 }
 
 // webSocket接続の処理
-func (h *WebSocketHandler) HandleConnection(c echo.Context) error{
+func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error{
 	req := c.Request()
 	resp := c.Response().Writer
 	
