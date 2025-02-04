@@ -19,9 +19,10 @@ type WebSocketHandler struct {
 	upgrader websocket.Upgrader
 }
 
-func NewWebSocketHandler(service *WebSocketService, upgrader websocket.Upgrader) *WebSocketHandler {
+func NewWebSocketHandler(service *WebSocketService, sm *SignalingManager, upgrader websocket.Upgrader) *WebSocketHandler {
 	return &WebSocketHandler{
 		service: service,
+		manager: sm,
 		upgrader: upgrader,
 	}
 }

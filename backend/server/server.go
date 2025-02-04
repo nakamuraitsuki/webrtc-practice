@@ -17,10 +17,11 @@ func ServerStart() {
 
 	//WebSocketの依存関係
 	websocketService := &signaling.WebSocketService{Port: cfg.Port}
+	signalingManager := signaling.NewSignalingManager()
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
-	websocketHandler := signaling.NewWebSocketHandler(websocketService, upgrader)
+	websocketHandler := signaling.NewWebSocketHandler(websocketService, signalingManager, upgrader)
 
 	routes.SetupRoutes(e, cfg, websocketHandler)
 
