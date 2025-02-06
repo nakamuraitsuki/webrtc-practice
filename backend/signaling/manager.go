@@ -2,6 +2,7 @@ package signaling
 
 import (
 	"sync"
+	"errors"
 
 	"github.com/gorilla/websocket"
 )
@@ -25,12 +26,18 @@ func NewSignalingManager() *SignalingManager {
 }
 
 //新しいクライアントの追加
-func (sm *SignalingManager) AddClient(conn *websocket.Conn, id string) {
+func (sm *SignalingManager) AddClient(conn *websocket.Conn, id string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
+	// IDがすでに登録されている場合、エラーを返す
+	if _, exists := sm.clientsByID[id]; exists {
+		return errors.New("client already exists with the given ID")
+	}
+
 	sm.clients[conn] = id
 	sm.clientsByID[id] = conn
+	return nil
 }
 
 //クライアントの削除
