@@ -9,7 +9,6 @@ import (
 type SignalingManager struct {
 	clients		map[*websocket.Conn]string	// クライアントの接続状況（Conn → ID）
 	clientsByID map[string]*websocket.Conn	// クライアントのIDごとの接続情報
-	broadcast	chan []byte					// ブロードキャスト用のチャネル
 	offerId		string						// 処理中のoffer識別子
 	sdpData		map[string]string			// SDPデータの保存
 	candidateData map[string][]string		// ICE候補の保存
@@ -20,7 +19,6 @@ func NewSignalingManager() *SignalingManager {
 	return &SignalingManager{
 		clients: 		make(map[*websocket.Conn]string),
 		clientsByID: 	make(map[string]*websocket.Conn),
-		broadcast: 		make(chan []byte),
 		sdpData: 		make(map[string]string),
 		candidateData: 	make(map[string][]string),
 	}
