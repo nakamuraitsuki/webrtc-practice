@@ -71,10 +71,11 @@ func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error{
 	
 	//接続によるメッセージ処理をゴルーチンに投げる
 	go h.HandleMessages(conn)
-	
+
 	return nil
 }
 
+//接続確立後のメッセージ処理
 func (h* WebSocketHandler) HandleMessages(conn *websocket.Conn) {
 	defer func() {
         h.manager.RemoveClient(conn) // クライアントを削除
