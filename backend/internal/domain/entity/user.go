@@ -1,14 +1,26 @@
 package entity
 
-import "time"
-
+import (
+	"time"
+)
 type User struct {
-	id         int        `json:"id"`
-	name       string     `json:"name"`
-	email      string     `json:"email"`
-	passwdhash string     `json:"passwdhash"`
-	createdAt  time.Time  `json:"created_at"`
-	updatedAt  *time.Time `json:"updated_at"`
+	id         int
+	name       string
+	email      string
+	passwdhash string
+	createdAt  time.Time
+	updatedAt  *time.Time
+}
+
+func NewUser(id int, name, email, passwdhash string, createdAt time.Time, updatedAt *time.Time) *User {
+	return &User{
+		id:         id,
+		name:       name,
+		email:      email,
+		passwdhash: passwdhash,
+		createdAt:  createdAt,
+		updatedAt:  updatedAt,
+	}
 }
 
 func (u User) GetID() int {
