@@ -4,11 +4,17 @@ import (
 	"example.com/webrtc-practice/internal/domain/entity"
 )
 
+type CreateUserParams struct {
+	Name     string
+	Email    string
+	PasswdHash string
+}
+
 type UserRepository interface {
-	CreateUser(user *entity.User) error
+	CreateUser(params CreateUserParams) error
 	GetAllUsers() ([]*entity.User, error)
 	GetUserByID(id int) (*entity.User, error)
 	GetUserByEmail(email string) (*entity.User, error)
-	Updateuser(user *entity.User) error
+	UpdateUser(user *entity.User) error
 	DeleteUser(id int) error
 }
