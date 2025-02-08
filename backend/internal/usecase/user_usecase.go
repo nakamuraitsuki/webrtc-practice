@@ -8,6 +8,7 @@ import (
 type UserUsecase struct {
 	repo   repository.UserRepository
 	hasher service.Hasher
+	tokenService service.TokenService
 }
 
 func NewUserUsecase(repo repository.UserRepository, hasher service.Hasher) *UserUsecase {
@@ -28,4 +29,22 @@ func (u *UserUsecase) RegisterUser(name, email, password string) error {
 		Email:     email,
 		PasswdHash: hashedPassword,
 	})
+}
+
+func (u *UserUsecase) AuthenticateUser(email, password string) (string, error) {
+	user, err := u.repo.GetUserByEmail(email)
+	if err != nil {
+		return "", err
+	}
+
+	ok, err := u.hasher.ComparePassword(user.GetPasswdHash(), password)
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", err
+	}
+
+	return u.tokenService.GenerateToken(user.GetID())
 }
