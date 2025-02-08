@@ -10,7 +10,7 @@ type CreateUserParams struct {
 	PasswdHash string
 }
 
-type UserRepository interface {
+type IUserRepository interface {
 	CreateUser(params CreateUserParams) error
 	GetAllUsers() ([]*entity.User, error)
 	GetUserByID(id int) (*entity.User, error)

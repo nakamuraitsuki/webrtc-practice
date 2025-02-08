@@ -6,12 +6,12 @@ import (
 )
 
 type UserUsecase struct {
-	repo   repository.UserRepository
+	repo   repository.IUserRepository
 	hasher service.Hasher
 	tokenService service.TokenService
 }
 
-func NewUserUsecase(repo repository.UserRepository, hasher service.Hasher) *UserUsecase {
+func NewUserUsecase(repo repository.IUserRepository, hasher service.Hasher) *UserUsecase {
 	return &UserUsecase{
 		repo:   repo,
 		hasher: hasher,
