@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"example.com/webrtc-practice/internal/entity"
+	"example.com/webrtc-practice/internal/domain/entity"
 )
 
 type UserRepository interface {
