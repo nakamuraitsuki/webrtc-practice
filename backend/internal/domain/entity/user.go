@@ -10,3 +10,11 @@ type User struct {
 	createdAt  time.Time  `json:"created_at"`
 	updatedAt  *time.Time `json:"updated_at"`
 }
+
+func (u User) GetID() int {
+	return u.id
+}
+
+func (u User) GetPasswdHash() string {
+	return u.passwdhash
+}
