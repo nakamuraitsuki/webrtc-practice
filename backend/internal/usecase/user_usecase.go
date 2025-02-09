@@ -1,13 +1,14 @@
 package usecase
 
 import (
+	"example.com/webrtc-practice/internal/domain/entity"
 	"example.com/webrtc-practice/internal/domain/repository"
 	"example.com/webrtc-practice/internal/domain/service"
 )
 
 type UserUsecase struct {
-	repo   repository.IUserRepository
-	hasher service.Hasher
+	repo         repository.IUserRepository
+	hasher       service.Hasher
 	tokenService service.TokenService
 }
 
@@ -18,17 +19,22 @@ func NewUserUsecase(repo repository.IUserRepository, hasher service.Hasher) *Use
 	}
 }
 
-func (u *UserUsecase) RegisterUser(name, email, password string) error {
+func (u *UserUsecase) RegisterUser(name, email, password string) (*entity.User, error) {
 	hashedPassword, err := u.hasher.HashPassword(password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return u.repo.CreateUser(repository.CreateUserParams{
-		Name:      name,
-		Email:     email,
+	res, err := u.repo.CreateUser(repository.CreateUserParams{
+		Name:       name,
+		Email:      email,
 		PasswdHash: hashedPassword,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 func (u *UserUsecase) AuthenticateUser(email, password string) (string, error) {

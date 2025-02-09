@@ -5,16 +5,16 @@ import (
 )
 
 type CreateUserParams struct {
-	Name     string
-	Email    string
+	Name       string
+	Email      string
 	PasswdHash string
 }
 
 type IUserRepository interface {
-	CreateUser(params CreateUserParams) error
+	CreateUser(params CreateUserParams) (*entity.User, error)
 	GetAllUsers() ([]*entity.User, error)
 	GetUserByID(id int) (*entity.User, error)
 	GetUserByEmail(email string) (*entity.User, error)
-	UpdateUser(user *entity.User) error
+	UpdateUser(user *entity.User) (*entity.User, error)
 	DeleteUser(id int) error
 }
