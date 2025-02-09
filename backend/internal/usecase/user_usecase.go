@@ -6,20 +6,21 @@ import (
 	"example.com/webrtc-practice/internal/domain/service"
 )
 
-type UserUsecase struct {
+type IUserUsecase struct {
 	repo         repository.IUserRepository
 	hasher       service.Hasher
 	tokenService service.TokenService
 }
 
-func NewUserUsecase(repo repository.IUserRepository, hasher service.Hasher) *UserUsecase {
-	return &UserUsecase{
-		repo:   repo,
-		hasher: hasher,
+func NewUserUsecase(repo repository.IUserRepository, hasher service.Hasher, tokenService service.TokenService) *IUserUsecase {
+	return &IUserUsecase{
+		repo:         repo,
+		hasher:       hasher,
+		tokenService: tokenService,
 	}
 }
 
-func (u *UserUsecase) RegisterUser(name, email, password string) (*entity.User, error) {
+func (u *IUserUsecase) RegisterUser(name, email, password string) (*entity.User, error) {
 	hashedPassword, err := u.hasher.HashPassword(password)
 	if err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func (u *UserUsecase) RegisterUser(name, email, password string) (*entity.User, 
 	return res, nil
 }
 
-func (u *UserUsecase) AuthenticateUser(email, password string) (string, error) {
+func (u *IUserUsecase) AuthenticateUser(email, password string) (string, error) {
 	user, err := u.repo.GetUserByEmail(email)
 	if err != nil {
 		return "", err
