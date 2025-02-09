@@ -1,4 +1,4 @@
-package hash
+package hasher
 
 import (
 	"example.com/webrtc-practice/internal/domain/service"
