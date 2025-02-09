@@ -4,6 +4,8 @@ go 1.23.2
 
 require github.com/labstack/echo/v4 v4.13.3
 
+require golang.org/x/time v0.8.0 // indirect
+
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/jmoiron/sqlx v1.4.0
