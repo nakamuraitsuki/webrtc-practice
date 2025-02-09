@@ -102,12 +102,31 @@ func (ur *UserRepository) UpdateUser(user *entity.User) (*entity.User, error) {
 	}
 
 	res, err := ur.GetUserByID(user.GetID())
+	if err != nil {
+		return nil, err
+	}
 
 	return res, nil
 }
 
 func (ur *UserRepository) DeleteUser(id int) error {
 	_, err := ur.db.Exec("DELETE FROM users WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func MigrateUser(db *sqlx.DB) error {
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL,
+		email TEXT NOT NULL,
+		passwd_hash TEXT NOT NULL,
+		created_at DATETIME NOT NULL,
+		updated_at DATETIME DEFAULT NULL
+	)`)
 	if err != nil {
 		return err
 	}

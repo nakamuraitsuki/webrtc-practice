@@ -14,9 +14,10 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
-	
+
 	// 設定の読み込み
 	cfg := config.LoadConfig()
 
+	// サーバーの起動
 	server.ServerStart(cfg, db)
 }
