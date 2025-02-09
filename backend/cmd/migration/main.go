@@ -9,11 +9,12 @@ import (
 )
 
 func main() {
-	db, err := sqlx.Open("sqlite3", "test.db")
+	db, err := sqlx.Open("sqlite3", "database.db")
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	defer db.Close()
+	
 	err = sqlite3.MigrateUser(db)
 	if err != nil {
 		log.Fatal(err)
