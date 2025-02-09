@@ -13,7 +13,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
+	defer db.Close()
+	
 	// 設定の読み込み
 	cfg := config.LoadConfig()
 
