@@ -1,8 +1,21 @@
 package main
 
-import "example.com/webrtc-practice/server"
+import (
+	"example.com/webrtc-practice/config"
+	"example.com/webrtc-practice/server"
+	"github.com/jmoiron/sqlx"
+)
 
 
 func main() {
-	server.ServerStart()
+	// データベースの初期化
+	db, err := sqlx.Open("sqlite3", "practice.db")
+	if err != nil {
+		panic(err)
+	}
+	
+	// 設定の読み込み
+	cfg := config.LoadConfig()
+
+	server.ServerStart(cfg, db)
 }
