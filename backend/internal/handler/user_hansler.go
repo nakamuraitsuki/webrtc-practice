@@ -26,12 +26,22 @@ func (h *UserHandler) Register(g *echo.Group) {
 	g.POST("/authenticate", h.AuthenticateUser)
 }
 
-func (h *UserHandler) RegisterUser(c echo.Context) error {
-	name := c.FormValue("name")
-	email := c.FormValue("email")
-	password := c.FormValue("password")
+type RegisterUserRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
-	user, err := h.UserUsecase.RegisterUser(name, email, password)
+func (h *UserHandler) RegisterUser(c echo.Context) error {
+	var params RegisterUserRequest
+
+	if err := c.Bind(&params); err != nil {
+		return c.JSON(400, map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
+
+	user, err := h.UserUsecase.RegisterUser(params.Name, params.Email, params.Password)
 	if err != nil {
 		return c.JSON(400, map[string]interface{}{
 			"error": err.Error(),
@@ -43,11 +53,21 @@ func (h *UserHandler) RegisterUser(c echo.Context) error {
 	})
 }
 
-func (h *UserHandler) AuthenticateUser(c echo.Context) error {
-	email := c.FormValue("email")
-	password := c.FormValue("password")
+type AuthenticateUserRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
-	token, err := h.UserUsecase.AuthenticateUser(email, password)
+func (h *UserHandler) AuthenticateUser(c echo.Context) error {
+	var req AuthenticateUserRequest
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
+
+	token, err := h.UserUsecase.AuthenticateUser(req.Email, req.Password)
 	if err != nil {
 		return c.JSON(400, map[string]interface{}{
 			"error": err.Error(),
