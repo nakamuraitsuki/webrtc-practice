@@ -20,7 +20,7 @@ func NewUserUsecase(repo repository.IUserRepository, hasher service.Hasher, toke
 	}
 }
 
-func (u *IUserUsecase) RegisterUser(name, email, password string) (*entity.User, error) {
+func (u *IUserUsecase) SignUp(name, email, password string) (*entity.User, error) {
 	hashedPassword, err := u.hasher.HashPassword(password)
 	if err != nil {
 		return nil, err

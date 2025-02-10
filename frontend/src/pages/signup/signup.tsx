@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export const Register = () => {
+export const Signup = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -13,7 +13,7 @@ export const Register = () => {
         setLoading(true);
 
         try {
-            const response = await fetch("http://localhost:8080/api/user/register", {
+            const response = await fetch("http://localhost:8080/api/user/signup", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -74,5 +74,3 @@ export const Register = () => {
         </div>
     );
 };
-
-export default Register;

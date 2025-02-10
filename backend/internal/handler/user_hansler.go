@@ -22,18 +22,18 @@ func NewUserHandler(repo repository.IUserRepository, hasher service.Hasher, toke
 }
 
 func (h *UserHandler) Register(g *echo.Group) {
-	g.POST("/register", h.RegisterUser)
-	g.POST("/authenticate", h.AuthenticateUser)
+	g.POST("/signup", h.SignUp)
+	g.POST("/login", h.Login)
 }
 
-type RegisterUserRequest struct {
+type SignUpRequest struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-func (h *UserHandler) RegisterUser(c echo.Context) error {
-	var params RegisterUserRequest
+func (h *UserHandler) SignUp(c echo.Context) error {
+	var params SignUpRequest
 
 	if err := c.Bind(&params); err != nil {
 		return c.JSON(400, map[string]interface{}{
@@ -41,7 +41,7 @@ func (h *UserHandler) RegisterUser(c echo.Context) error {
 		})
 	}
 
-	user, err := h.UserUsecase.RegisterUser(params.Name, params.Email, params.Password)
+	user, err := h.UserUsecase.SignUp(params.Name, params.Email, params.Password)
 	if err != nil {
 		return c.JSON(400, map[string]interface{}{
 			"error": err.Error(),
@@ -53,13 +53,13 @@ func (h *UserHandler) RegisterUser(c echo.Context) error {
 	})
 }
 
-type AuthenticateUserRequest struct {
+type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-func (h *UserHandler) AuthenticateUser(c echo.Context) error {
-	var req AuthenticateUserRequest
+func (h *UserHandler) Login(c echo.Context) error {
+	var req LoginRequest
 
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(400, map[string]interface{}{
