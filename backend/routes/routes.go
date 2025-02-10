@@ -2,15 +2,13 @@ package routes
 
 import (
 	"example.com/webrtc-practice/config"
-	"example.com/webrtc-practice/signaling"
-	
+	"example.com/webrtc-practice/internal/handler"
+
 	"github.com/labstack/echo/v4"
 )
 
-func SetupRoutes(e *echo.Echo, cfg *config.Config, wsHandler *signaling.WebSocketHandler) {
+func SetupRoutes(e *echo.Echo, cfg *config.Config, userHandler handler.UserHandler) {
 
-	//webSocket関係のルーティング
-	wsGroup := e.Group("/ws")
-	wsHandler.Register(wsGroup)
-
+	userGroup := e.Group("/api/user")
+	userHandler.Register(userGroup)
 }
