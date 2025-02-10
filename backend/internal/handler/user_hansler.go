@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"example.com/webrtc-practice/internal/domain/repository"
 	"example.com/webrtc-practice/internal/domain/service"
 	"example.com/webrtc-practice/internal/usecase"
@@ -8,7 +10,8 @@ import (
 )
 
 type UserHandler struct {
-	UserUsecase *usecase.IUserUsecase
+	UserUsecase    *usecase.IUserUsecase
+	UserRepository repository.IUserRepository
 }
 
 func NewUserHandler(repo repository.IUserRepository, hasher service.Hasher, tokenService service.TokenService) UserHandler {
@@ -18,6 +21,7 @@ func NewUserHandler(repo repository.IUserRepository, hasher service.Hasher, toke
 			hasher,
 			tokenService,
 		),
+		UserRepository: repo,
 	}
 }
 
@@ -58,6 +62,17 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+type LoginUserResponse struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type LoginResponse struct {
+	User  LoginUserResponse `json:"user"`
+	Token string            `json:"token"`
+}
+
 func (h *UserHandler) Login(c echo.Context) error {
 	var req LoginRequest
 
@@ -74,7 +89,19 @@ func (h *UserHandler) Login(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(200, map[string]interface{}{
-		"token": token,
+	user, err := h.UserRepository.GetUserByEmail(req.Email)
+	if err != nil {
+		return c.JSON(400, map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, LoginResponse{
+		User: LoginUserResponse{
+			ID:    user.GetID(),
+			Name:  user.GetName(),
+			Email: user.GetEmail(),
+		},
+		Token: token,
 	})
 }
