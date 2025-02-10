@@ -10,10 +10,18 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func ServerStart(cfg *config.Config, db *sqlx.DB) {
 	e := echo.New()
+
+	// ミドルウェアの設定
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},  // すべてのオリジンを許可
+		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE}, // 許可するHTTPメソッド
+		AllowHeaders: []string{echo.HeaderContentType, echo.HeaderAuthorization}, // 許可するHTTPヘッダー
+	}))
 
 	// ユーザーハンドラーの初期化
 	userRepository := sqlite3.NewUserRepository(db)

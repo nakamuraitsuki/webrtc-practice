@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// データベースの初期化
-	db, err := sqlx.Open("sqlite3", "practice.db")
+	db, err := sqlx.Open("sqlite3", "database.db")
 	if err != nil {
 		panic(err)
 	}
