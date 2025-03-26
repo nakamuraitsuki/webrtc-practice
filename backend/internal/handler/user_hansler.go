@@ -40,19 +40,19 @@ func (h *UserHandler) SignUp(c echo.Context) error {
 	var params SignUpRequest
 
 	if err := c.Bind(&params); err != nil {
-		return c.JSON(400, map[string]interface{}{
+		return c.JSON(400, map[string]any{
 			"error": err.Error(),
 		})
 	}
 
 	user, err := h.UserUsecase.SignUp(params.Name, params.Email, params.Password)
 	if err != nil {
-		return c.JSON(400, map[string]interface{}{
+		return c.JSON(400, map[string]any{
 			"error": err.Error(),
 		})
 	}
 
-	return c.JSON(200, map[string]interface{}{
+	return c.JSON(200, map[string]any{
 		"user": user,
 	})
 }
@@ -77,21 +77,21 @@ func (h *UserHandler) Login(c echo.Context) error {
 	var req LoginRequest
 
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, map[string]interface{}{
+		return c.JSON(400, map[string]any{
 			"error": err.Error(),
 		})
 	}
 
 	token, err := h.UserUsecase.AuthenticateUser(req.Email, req.Password)
 	if err != nil {
-		return c.JSON(400, map[string]interface{}{
+		return c.JSON(400, map[string]any{
 			"error": err.Error(),
 		})
 	}
 
 	user, err := h.UserRepository.GetUserByEmail(req.Email)
 	if err != nil {
-		return c.JSON(400, map[string]interface{}{
+		return c.JSON(400, map[string]any{
 			"error": err.Error(),
 		})
 	}
