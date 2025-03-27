@@ -14,7 +14,11 @@ type UserHandler struct {
 	UserRepository repository.IUserRepository
 }
 
-func NewUserHandler(repo repository.IUserRepository, hasher service.Hasher, tokenService service.TokenService) UserHandler {
+func NewUserHandler(
+	repo repository.IUserRepository,
+	hasher service.Hasher,
+	tokenService service.TokenService,
+) UserHandler {
 	return UserHandler{
 		UserUsecase: usecase.NewUserUsecase(
 			repo,
