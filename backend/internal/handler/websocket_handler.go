@@ -68,7 +68,7 @@ func (h *WebsocketHandler) HandleWebSocket(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "success"})
 }
 
-func HandleMessages() {
+func (h *WebsocketHandler) HandleMessages() {
 
 	functions["connect"] = connect
 	functions["offer"] = offer
