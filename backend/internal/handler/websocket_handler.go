@@ -32,14 +32,16 @@ func NewWebsocketHandler() WebsocketHandler {
 func (h *WebsocketHandler) Register(g *echo.Group) {
 	g.GET("/", h.HandleWebSocket)
 }
-
+// WebSocket接続（Handler)
 func (h *WebsocketHandler) HandleWebSocket(c echo.Context) error {
+	// リクエストをコネクションにアップグレード（Handler)
 	conn, _ := upgrader.Upgrade(c.Response().Writer, c.Request(), nil) // error ignored for sake of simplicity
 
+	// コネクションを保持してメッセージ送信を待機（Usecase)
 	for {
 		_, message, err := conn.ReadMessage()
 		if _, ok := clients[conn]; !ok {
-			// 新規接続
+			// メッセージ抽出
 			var jsonStr = string(message)
 			var data map[string]any
 			err := json.Unmarshal([]byte(jsonStr), &data)
@@ -47,8 +49,10 @@ func (h *WebsocketHandler) HandleWebSocket(c echo.Context) error {
 				panic(err)
 			}
 
-			// idの登録
+			// id抽出
 			id := data["id"].(string)
+
+			// 新規ユーザー登録(repo)
 			clients[conn] = id
 			clientsByID[id] = conn
 		}
@@ -59,7 +63,7 @@ func (h *WebsocketHandler) HandleWebSocket(c echo.Context) error {
 			delete(clients, conn)
 			break
 		}
-
+		// メッセージを送信ブロードキャスト
 		broadcast <- message
 	}
 	offerId = ""
@@ -68,8 +72,10 @@ func (h *WebsocketHandler) HandleWebSocket(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "success"})
 }
 
+// メッセージ処理の呼び出し（Handler)
 func (h *WebsocketHandler) HandleMessages() {
 
+	// メッセージ処理の分岐（Usecase)
 	functions["connect"] = connect
 	functions["offer"] = offer
 	functions["answer"] = answer
