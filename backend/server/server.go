@@ -35,8 +35,5 @@ func ServerStart(cfg *config.Config, db *sqlx.DB) {
 
 	routes.SetupRoutes(e, cfg, userHandler, websocketHandler)
 
-	// WebSocketのメッセージを処理ゴルーチン
-	go websocketHandler.HandleMessages()
-
 	e.Logger.Fatal(e.Start(":" + cfg.Port))
 }
