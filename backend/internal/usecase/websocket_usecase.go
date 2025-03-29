@@ -2,68 +2,110 @@ package usecase
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
 var (
-	clients     = make(map[*websocket.Conn]string)
-	clientsByID = make(map[string]*websocket.Conn)
-	broadcast   = make(chan []byte)
-	functions  = make(map[string]any)
-	sdpData     = make(map[string]string)
-	candidateData = make(map[string][]string)
-	offerId     string = ""
+	clients              = make(map[*websocket.Conn]string)
+	clientsByID          = make(map[string]*websocket.Conn)
+	broadcast            = make(chan []byte)
+	sdpData              = make(map[string]string)
+	candidateData        = make(map[string][]string)
+	offerId       string = ""
 )
 
-type IWebsocketUsecase struct{}
-
-func NewWebsocketUsecase() IWebsocketUsecase {
-	return IWebsocketUsecase{}
+type IWebsocketUsecase struct {
+	mu *sync.Mutex
 }
 
-func (u *IWebsocketUsecase) Register(conn *websocket.Conn) error {
-	for {
-		_, message, err := conn.ReadMessage()
-		if _, ok := clients[conn]; !ok {
-			// メッセージ抽出
-			var jsonStr = string(message)
-			var data map[string]any
-			err := json.Unmarshal([]byte(jsonStr), &data)
-			if err != nil {
-				panic(err)
-			}
-
-			// id抽出
-			id := data["id"].(string)
-
-			// 新規ユーザー登録(repo)
-			clients[conn] = id
-			clientsByID[id] = conn
-		}
-
-		if err != nil {
-			log.Print(err)
-			delete(clientsByID, clients[conn])
-			delete(clients, conn)
-			break
-		}
-
-		broadcast <- message
+func NewWebsocketUsecase(
+	mu *sync.Mutex,
+) IWebsocketUsecase {
+	return IWebsocketUsecase{
+		mu: mu,
 	}
+}
+
+// RegisterClientは新しいクライアントを登録し、メッセージ受信のゴルーチンを開始
+func (u *IWebsocketUsecase) RegisterClient(conn *websocket.Conn) error {
+	// ミューテーションロックを使用して、同時アクセスを防止
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	// 重複登録を避ける
+	if _, exists := clients[conn]; exists {
+		return errors.New("client already registered")
+	}
+
+	// connectionの存在を登録(repo)
+	clients[conn] = ""
 
 	return nil
 }
 
-func (u *IWebsocketUsecase) ProcessMessage() {
-	functions["connect"] = connect
-	functions["offer"] = offer
-	functions["answer"] = answer
-	functions["candidateAdd"] = candidateAdd
+// メッセージ受信待機（ユーザー　->　ブロードキャスト）
+func (u *IWebsocketUsecase) ListenForMessages(conn *websocket.Conn) {
+	// ID初期化
+	var clientID string
+	clientID = ""
 
+	// メッセージ受信ループ
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			u.HandleClientDisconnection(conn)
+			break
+		}
+
+		// 初回ID登録
+		if clientID == "" {
+			// メッセージ抽出
+			// 文字列 -> json
+			var jsonStr = string(message)
+
+			// json -> map[string]any
+			var data map[string]any
+			err := json.Unmarshal([]byte(jsonStr), &data)
+			if err != nil {
+				log.Println("Error unmarshalling message:", err)
+				continue
+			}
+
+			id := data["id"].(string)
+			clientID = id
+
+			// 新規ユーザー本登録(repo)
+			clients[conn] = id
+			clientsByID[id] = conn
+		}
+
+		broadcast <- message
+	}
+}
+
+// クライアント切断時の処理
+func (u *IWebsocketUsecase) HandleClientDisconnection(conn *websocket.Conn) {
+	// ミューテーションロックを使用して、同時アクセスを防止
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	// 削除処理(repo)
+	if id, ok := clients[conn]; ok {
+		delete(clientsByID, id)
+		delete(clients, conn)
+	}
+
+	// ハンドラ内での defer conn.Close() の使用を期待して、コネクション閉鎖はしない
+}
+
+// メッセージ待ち（ブロードキャスト　->　サーバー）
+func (u *IWebsocketUsecase) ProcessMessage() {
 	for {
 		message := <-broadcast
 		// text -> json
@@ -75,16 +117,26 @@ func (u *IWebsocketUsecase) ProcessMessage() {
 			panic(err)
 		}
 
-		// 処理分岐
+		// 処理の分岐
 		msgDataType := data["type"].(string)
-		function := functions[msgDataType].(func(map[string]any))
-		function(data)
+
+		switch msgDataType {
+		case "connect":
+			connect(data)
+		case "offer":
+			offer(data)
+		case "answer":
+			answer(data)
+		case "candidateAdd":
+			candidateAdd(data)
+		}
 	}
 }
 
 func connect(data map[string]any) {
 	resultData := make(map[string]string)
 
+	// offerの送り主を取得
 	id := data["id"].(string)
 	client := clientsByID[id]
 

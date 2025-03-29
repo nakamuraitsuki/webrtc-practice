@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"sync"
 
 	"example.com/webrtc-practice/internal/usecase"
 	"github.com/gorilla/websocket"
@@ -10,16 +11,20 @@ import (
 
 var (
 	upgrader = websocket.Upgrader{}
-
-	offerId string = ""
 )
 
 type WebsocketHandler struct {
 	Usecase usecase.IWebsocketUsecase
 }
 
-func NewWebsocketHandler() WebsocketHandler {
-	h := WebsocketHandler{Usecase: usecase.NewWebsocketUsecase()}
+func NewWebsocketHandler(
+	mu *sync.Mutex,
+) WebsocketHandler {
+	h := WebsocketHandler{
+		Usecase: usecase.NewWebsocketUsecase(
+			mu,
+		),
+	}
 
 	// WebSocketメッセージ処理のゴルーチンを起動
 	go h.HandleMessages()
@@ -37,9 +42,12 @@ func (h *WebsocketHandler) HandleWebSocket(c echo.Context) error {
 	conn, _ := upgrader.Upgrade(c.Response().Writer, c.Request(), nil) // error ignored for sake of simplicity
 	defer conn.Close()
 
-	h.Usecase.Register(conn)
+	err := h.Usecase.RegisterClient(conn)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "client already registered"})
+	}
 
-	offerId = ""
+	go h.Usecase.ListenForMessages(conn)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "success"})
 }
