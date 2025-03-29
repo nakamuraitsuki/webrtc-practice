@@ -80,6 +80,15 @@ func (u *IWebsocketUsecase) ListenForMessages(conn *websocket.Conn) {
 			id := data["id"].(string)
 			clientID = id
 
+			// 重複登録の確認
+			u.mu.Lock()
+			if _, exists := clientsByID[id]; exists {
+				u.mu.Unlock()
+				log.Println("Error: User ID already registered")
+				conn.Close()
+				return
+			}
+			
 			// 新規ユーザー本登録(repo)
 			clients[conn] = id
 			clientsByID[id] = conn
@@ -136,7 +145,7 @@ func (u *IWebsocketUsecase) ProcessMessage() {
 func (u *IWebsocketUsecase) connect(data map[string]any) {
 	resultData := make(map[string]string)
 
-	// offerの送り主を取得
+	// メッセージの送り主を取得
 	id := data["id"].(string)
 	client := clientsByID[id]
 
@@ -149,12 +158,14 @@ func (u *IWebsocketUsecase) connect(data map[string]any) {
 		bytes := u.jsonToBytes(resultData)
 		u.sendMessage(client, bytes)
 		return
-	} else if id == offerId {
-		// 重複
+	} else if id == offerId {// offer中なのが自分だったら
+		// 重複なので何もしない
 		return
 	}
 
-	// offerを作成
+	// もし自分以外のofferしている人がいたら。
+
+	// anser待機中の人が送ったofferを整形
 	resultData["type"] = "offer"
 	resultData["sdp"] = sdpData[offerId]
 	resultData["target_id"] = offerId
@@ -214,7 +225,7 @@ func (u *IWebsocketUsecase) candidateAdd(data map[string]any) {
 	fmt.Println("[Candidate Add]")
 	resultData := make(map[string]string)
 
-	// 相手が已經接続的話、candidateDataに入れずに直接送る
+	// 相手が通話中なら、candidateDataに入れずに直接送る
 	id := data["id"].(string)
 	candidateByte, _ := json.Marshal(data["candidate"])
 	candidate := string(candidateByte)
@@ -222,7 +233,7 @@ func (u *IWebsocketUsecase) candidateAdd(data map[string]any) {
 	target_id := data["target_id"].(string)
 	if target_id != "" {
 		if client, ok2 := clientsByID[target_id]; ok2 {
-			// 相手が有的話
+			// 相手が接続中
 			fmt.Println("[Candidate]")
 			resultData["type"] = "candidate"
 			resultData["candidate"] = candidate
