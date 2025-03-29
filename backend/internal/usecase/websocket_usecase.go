@@ -183,6 +183,7 @@ func (u *IWebsocketUsecase) offer(data map[string]any) {
 	fmt.Println("[Offer]")
 	id := data["id"].(string)
 	sdp, _ := json.Marshal(data["sdp"])
+	// 受け取ったSDPを保存(repo)
 	sdpData[id] = string(sdp)
 }
 
@@ -210,11 +211,13 @@ func (u *IWebsocketUsecase) sendAnswer(data map[string]any) {
 func (u *IWebsocketUsecase) sendCandidate(data map[string]any) {
 	returnData := make(map[string]string)
 	id := offerId
+	// 保存されているcandidateの有無を確認（repo）
 	if _, ok := candidateData[id]; !ok {
 		return
 	}
 
 	answerId := data["id"].(string)
+	// クライアントの取得（repo）
 	client := clientsByID[answerId]
 	fmt.Println("candidate受け取り")
 	fmt.Println("[Candidate]")
@@ -252,9 +255,12 @@ func (u *IWebsocketUsecase) candidateAdd(data map[string]any) {
 	}
 
 	// 相手が還沒來 -> 保存
+	// candidateの存在確認（repo）
 	if _, ok := candidateData[id]; !ok {
+		// candidateの保存(repo)
 		candidateData[id] = []string{candidate}
 	} else {
+		// candidateの追加(repo)
 		candidateData[id] = append(candidateData[id], candidate)
 	}
 }

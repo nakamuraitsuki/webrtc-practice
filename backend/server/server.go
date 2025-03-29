@@ -5,11 +5,10 @@ import (
 
 	"example.com/webrtc-practice/config"
 	"example.com/webrtc-practice/internal/handler"
-	"example.com/webrtc-practice/internal/infrastructure/repository/sqlite3"
-	"example.com/webrtc-practice/internal/infrastructure/service/hasher"
-	"example.com/webrtc-practice/internal/infrastructure/service/jwt"
+	"example.com/webrtc-practice/internal/infrastructure/repository_impl/sqlite3"
+	"example.com/webrtc-practice/internal/infrastructure/service_impl/hasher"
+	"example.com/webrtc-practice/internal/infrastructure/service_impl/jwt"
 	"example.com/webrtc-practice/routes"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
