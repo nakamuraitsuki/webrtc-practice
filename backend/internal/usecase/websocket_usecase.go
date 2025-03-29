@@ -14,7 +14,7 @@ import (
 var (
 	clients              = make(map[*websocket.Conn]string)
 	clientsByID          = make(map[string]*websocket.Conn)
-	broadcast            = make(chan []byte)
+	broadcast            = make(chan []byte) // []byteだが、Message型を作りたい気持ちがある
 	sdpData              = make(map[string]string)
 	candidateData        = make(map[string][]string)
 	offerId       string = ""
@@ -32,8 +32,9 @@ func NewWebsocketUsecase(
 	}
 }
 
-// RegisterClientは新しいクライアントを登録し、メッセージ受信のゴルーチンを開始
+// RegisterClientは新しいクライアントを登録
 func (u *IWebsocketUsecase) RegisterClient(conn *websocket.Conn) error {
+	// connectionの存在を登録(repo)
 	// ミューテーションロックを使用して、同時アクセスを防止
 	u.mu.Lock()
 	defer u.mu.Unlock()
@@ -43,7 +44,6 @@ func (u *IWebsocketUsecase) RegisterClient(conn *websocket.Conn) error {
 		return errors.New("client already registered")
 	}
 
-	// connectionの存在を登録(repo)
 	clients[conn] = ""
 
 	return nil
@@ -77,6 +77,7 @@ func (u *IWebsocketUsecase) ListenForMessages(conn *websocket.Conn) {
 				continue
 			}
 
+			// idの取得
 			id := data["id"].(string)
 			clientID = id
 
@@ -88,7 +89,7 @@ func (u *IWebsocketUsecase) ListenForMessages(conn *websocket.Conn) {
 				conn.Close()
 				return
 			}
-			
+
 			// 新規ユーザー本登録(repo)
 			clients[conn] = id
 			clientsByID[id] = conn
@@ -147,15 +148,17 @@ func (u *IWebsocketUsecase) connect(data map[string]any) {
 
 	// メッセージの送り主を取得
 	id := data["id"].(string)
+	// IDからクライアントを取得(repo)
 	client := clientsByID[id]
 
 	// もしofferしている人がいなかったら
 	if len(offerId) == 0 {
 		// 現在offer中のIDを更新
 		offerId = id
-		// offerをコールバック
+		// offerをコールバック（送り主がofferを送ることを期待する）
 		resultData["type"] = "offer"
 		bytes := u.jsonToBytes(resultData)
+		// 送信（conn依存）
 		u.sendMessage(client, bytes)
 		return
 	} else if id == offerId {// offer中なのが自分だったら
@@ -165,7 +168,7 @@ func (u *IWebsocketUsecase) connect(data map[string]any) {
 
 	// もし自分以外のofferしている人がいたら。
 
-	// anser待機中の人が送ったofferを整形
+	// anser待機中の人が送ったofferを整形（offerを受け取った相手がanswerを送ることを期待する）
 	resultData["type"] = "offer"
 	resultData["sdp"] = sdpData[offerId]
 	resultData["target_id"] = offerId
@@ -176,6 +179,7 @@ func (u *IWebsocketUsecase) connect(data map[string]any) {
 }
 
 func (u *IWebsocketUsecase) offer(data map[string]any) {
+	// offerの送り主のSDPを保存
 	fmt.Println("[Offer]")
 	id := data["id"].(string)
 	sdp, _ := json.Marshal(data["sdp"])
@@ -217,6 +221,8 @@ func (u *IWebsocketUsecase) sendCandidate(data map[string]any) {
 	returnData["type"] = "candidate"
 	returnData["candidate"] = strings.Join(candidateData[id], "|")
 	bytes := u.jsonToBytes(returnData)
+
+	// 送信（conn依存）
 	u.sendMessage(client, bytes)
 
 }
@@ -238,6 +244,8 @@ func (u *IWebsocketUsecase) candidateAdd(data map[string]any) {
 			resultData["type"] = "candidate"
 			resultData["candidate"] = candidate
 			bytes := u.jsonToBytes(resultData)
+
+			// 送信（conn依存）
 			u.sendMessage(client, bytes)
 			return
 		}
@@ -251,7 +259,7 @@ func (u *IWebsocketUsecase) candidateAdd(data map[string]any) {
 	}
 }
 
-// 訊息送信
+// message送信（conn 依存）
 func (u *IWebsocketUsecase) sendMessage(client *websocket.Conn, bytes []byte) {
 	err := client.WriteMessage(websocket.TextMessage, bytes)
 	if err != nil {
