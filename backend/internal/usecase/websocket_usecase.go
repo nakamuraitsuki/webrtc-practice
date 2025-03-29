@@ -122,60 +122,64 @@ func (u *IWebsocketUsecase) ProcessMessage() {
 
 		switch msgDataType {
 		case "connect":
-			connect(data)
+			u.connect(data)
 		case "offer":
-			offer(data)
+			u.offer(data)
 		case "answer":
-			answer(data)
+			u.answer(data)
 		case "candidateAdd":
-			candidateAdd(data)
+			u.candidateAdd(data)
 		}
 	}
 }
 
-func connect(data map[string]any) {
+func (u *IWebsocketUsecase) connect(data map[string]any) {
 	resultData := make(map[string]string)
 
 	// offerの送り主を取得
 	id := data["id"].(string)
 	client := clientsByID[id]
 
-	// offerを送ってもらう
+	// もしofferしている人がいなかったら
 	if len(offerId) == 0 {
+		// 現在offer中のIDを更新
 		offerId = id
+		// offerをコールバック
 		resultData["type"] = "offer"
-		bytes := jsonToBytes(resultData)
-		sendMessage(client, bytes)
+		bytes := u.jsonToBytes(resultData)
+		u.sendMessage(client, bytes)
 		return
 	} else if id == offerId {
 		// 重複
 		return
 	}
 
-	// offerを送る
+	// offerを作成
 	resultData["type"] = "offer"
 	resultData["sdp"] = sdpData[offerId]
 	resultData["target_id"] = offerId
-	bytes := jsonToBytes(resultData)
-	sendMessage(client, bytes)
+	bytes := u.jsonToBytes(resultData)
+
+	// 送信（conn依存）
+	u.sendMessage(client, bytes)
 }
 
-func offer(data map[string]any) {
+func (u *IWebsocketUsecase) offer(data map[string]any) {
 	fmt.Println("[Offer]")
 	id := data["id"].(string)
 	sdp, _ := json.Marshal(data["sdp"])
 	sdpData[id] = string(sdp)
 }
 
-func answer(data map[string]any) {
+func (u *IWebsocketUsecase) answer(data map[string]any) {
 	// offerの送り主にanswerを返す
-	sendAnswer(data)
+	u.sendAnswer(data)
 
 	// answerの送り主にcandidateを送る
-	sendCandidate(data)
+	u.sendCandidate(data)
 }
 
-func sendAnswer(data map[string]any) {
+func (u *IWebsocketUsecase) sendAnswer(data map[string]any) {
 	fmt.Println("[Answer]")
 	resultData := make(map[string]string)
 	resultData["type"] = "answer"
@@ -184,11 +188,11 @@ func sendAnswer(data map[string]any) {
 	resultData["sdp"] = string(sdp)
 
 	client := clientsByID[target_id]
-	bytes := jsonToBytes(resultData)
-	sendMessage(client, bytes)
+	bytes := u.jsonToBytes(resultData)
+	u.sendMessage(client, bytes)
 }
 
-func sendCandidate(data map[string]any) {
+func (u *IWebsocketUsecase) sendCandidate(data map[string]any) {
 	returnData := make(map[string]string)
 	id := offerId
 	if _, ok := candidateData[id]; !ok {
@@ -201,12 +205,12 @@ func sendCandidate(data map[string]any) {
 	fmt.Println("[Candidate]")
 	returnData["type"] = "candidate"
 	returnData["candidate"] = strings.Join(candidateData[id], "|")
-	bytes := jsonToBytes(returnData)
-	sendMessage(client, bytes)
+	bytes := u.jsonToBytes(returnData)
+	u.sendMessage(client, bytes)
 
 }
 
-func candidateAdd(data map[string]any) {
+func (u *IWebsocketUsecase) candidateAdd(data map[string]any) {
 	fmt.Println("[Candidate Add]")
 	resultData := make(map[string]string)
 
@@ -222,8 +226,8 @@ func candidateAdd(data map[string]any) {
 			fmt.Println("[Candidate]")
 			resultData["type"] = "candidate"
 			resultData["candidate"] = candidate
-			bytes := jsonToBytes(resultData)
-			sendMessage(client, bytes)
+			bytes := u.jsonToBytes(resultData)
+			u.sendMessage(client, bytes)
 			return
 		}
 	}
@@ -237,7 +241,7 @@ func candidateAdd(data map[string]any) {
 }
 
 // 訊息送信
-func sendMessage(client *websocket.Conn, bytes []byte) {
+func (u *IWebsocketUsecase) sendMessage(client *websocket.Conn, bytes []byte) {
 	err := client.WriteMessage(websocket.TextMessage, bytes)
 	if err != nil {
 		log.Println(err)
@@ -246,7 +250,7 @@ func sendMessage(client *websocket.Conn, bytes []byte) {
 	}
 }
 
-func jsonToBytes(result map[string]string) []byte {
+func (u *IWebsocketUsecase) jsonToBytes(result map[string]string) []byte {
 	jsonText, err := json.Marshal(result)
 	if err != nil {
 		panic(err)
