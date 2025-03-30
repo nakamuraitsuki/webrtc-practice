@@ -2,51 +2,35 @@ package usecase
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"sync"
 
+	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
 	"github.com/gorilla/websocket"
 )
 
 var (
-	clients              = make(map[*websocket.Conn]string)
-	clientsByID          = make(map[string]*websocket.Conn)
 	broadcast            = make(chan []byte) // []byteだが、Message型を作りたい気持ちがある
-	sdpData              = make(map[string]string)
-	candidateData        = make(map[string][]string)
 	offerId       string = ""
 )
 
 type IWebsocketUsecase struct {
-	mu *sync.Mutex
+	repo repository_impl.WebsocketRepositoryImpl
 }
 
 func NewWebsocketUsecase(
 	mu *sync.Mutex,
 ) IWebsocketUsecase {
 	return IWebsocketUsecase{
-		mu: mu,
+		repo: *repository_impl.NewWebsocketRepositoryImpl(),
 	}
 }
 
-// RegisterClientは新しいクライアントを登録
+// RegisterClientは新しいクライアントを登録（repoのラップ）
 func (u *IWebsocketUsecase) RegisterClient(conn *websocket.Conn) error {
-	// connectionの存在を登録(repo)
-	// ミューテーションロックを使用して、同時アクセスを防止
-	u.mu.Lock()
-	defer u.mu.Unlock()
-
-	// 重複登録を避ける
-	if _, exists := clients[conn]; exists {
-		return errors.New("client already registered")
-	}
-
-	clients[conn] = ""
-
-	return nil
+	return u.repo.RegisterConnection(conn)
 }
 
 // メッセージ受信待機（ユーザー　->　ブロードキャスト）
@@ -59,7 +43,7 @@ func (u *IWebsocketUsecase) ListenForMessages(conn *websocket.Conn) {
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
-			u.HandleClientDisconnection(conn)
+			u.repo.DeleteConnection(conn)
 			break
 		}
 
@@ -81,37 +65,17 @@ func (u *IWebsocketUsecase) ListenForMessages(conn *websocket.Conn) {
 			id := data["id"].(string)
 			clientID = id
 
-			// 重複登録の確認
-			u.mu.Lock()
-			if _, exists := clientsByID[id]; exists {
-				u.mu.Unlock()
-				log.Println("Error: User ID already registered")
-				conn.Close()
-				return
+			if u.repo.ExistsByID(id) {
+				// 既に登録されている場合は、今つなごうとしているコネクションを削除
+				u.repo.DeleteConnection(conn)
+				log.Println("Client with ID already exists. Connection closed.")
+				break
 			}
 
-			// 新規ユーザー本登録(repo)
-			clients[conn] = id
-			clientsByID[id] = conn
+			u.repo.RegisterID(conn, id)
 		}
-
 		broadcast <- message
 	}
-}
-
-// クライアント切断時の処理
-func (u *IWebsocketUsecase) HandleClientDisconnection(conn *websocket.Conn) {
-	// ミューテーションロックを使用して、同時アクセスを防止
-	u.mu.Lock()
-	defer u.mu.Unlock()
-
-	// 削除処理(repo)
-	if id, ok := clients[conn]; ok {
-		delete(clientsByID, id)
-		delete(clients, conn)
-	}
-
-	// ハンドラ内での defer conn.Close() の使用を期待して、コネクション閉鎖はしない
 }
 
 // メッセージ待ち（ブロードキャスト　->　サーバー）
@@ -149,7 +113,11 @@ func (u *IWebsocketUsecase) connect(data map[string]any) {
 	// メッセージの送り主を取得
 	id := data["id"].(string)
 	// IDからクライアントを取得(repo)
-	client := clientsByID[id]
+	client, err := u.repo.GetClientByID(id)
+	if err != nil {
+		log.Println("Client not found:", err)
+		return
+	}
 
 	// もしofferしている人がいなかったら
 	if len(offerId) == 0 {
@@ -161,7 +129,7 @@ func (u *IWebsocketUsecase) connect(data map[string]any) {
 		// 送信（conn依存）
 		u.sendMessage(client, bytes)
 		return
-	} else if id == offerId {// offer中なのが自分だったら
+	} else if id == offerId { // offer中なのが自分だったら
 		// 重複なので何もしない
 		return
 	}
@@ -170,7 +138,11 @@ func (u *IWebsocketUsecase) connect(data map[string]any) {
 
 	// anser待機中の人が送ったofferを整形（offerを受け取った相手がanswerを送ることを期待する）
 	resultData["type"] = "offer"
-	resultData["sdp"] = sdpData[offerId]
+	resultData["sdp"], err = u.repo.GetSDPByID(offerId)
+	if err != nil {
+		log.Println("SDP not found:", err)
+		return
+	}
 	resultData["target_id"] = offerId
 	bytes := u.jsonToBytes(resultData)
 
@@ -183,8 +155,7 @@ func (u *IWebsocketUsecase) offer(data map[string]any) {
 	fmt.Println("[Offer]")
 	id := data["id"].(string)
 	sdp, _ := json.Marshal(data["sdp"])
-	// 受け取ったSDPを保存(repo)
-	sdpData[id] = string(sdp)
+	u.repo.SaveSDP(id, string(sdp))
 }
 
 func (u *IWebsocketUsecase) answer(data map[string]any) {
@@ -203,7 +174,12 @@ func (u *IWebsocketUsecase) sendAnswer(data map[string]any) {
 	sdp, _ := json.Marshal(data["sdp"])
 	resultData["sdp"] = string(sdp)
 
-	client := clientsByID[target_id]
+	client, err := u.repo.GetClientByID(target_id)
+	if err != nil {
+		log.Println("Client not found:", err)
+		return
+	}
+
 	bytes := u.jsonToBytes(resultData)
 	u.sendMessage(client, bytes)
 }
@@ -211,18 +187,30 @@ func (u *IWebsocketUsecase) sendAnswer(data map[string]any) {
 func (u *IWebsocketUsecase) sendCandidate(data map[string]any) {
 	returnData := make(map[string]string)
 	id := offerId
-	// 保存されているcandidateの有無を確認（repo）
-	if _, ok := candidateData[id]; !ok {
+
+	if !u.repo.ExistsCandidateByID(id) {
 		return
 	}
 
 	answerId := data["id"].(string)
 	// クライアントの取得（repo）
-	client := clientsByID[answerId]
+	client, err := u.repo.GetClientByID(answerId)
+	if err == nil {
+		log.Println("Client not found:", answerId)
+		return
+	}
+	
 	fmt.Println("candidate受け取り")
 	fmt.Println("[Candidate]")
 	returnData["type"] = "candidate"
-	returnData["candidate"] = strings.Join(candidateData[id], "|")
+
+	candidate, err := u.repo.GetCandidatesByID(id)
+	if err != nil {
+		log.Println("Candidate not found:", err)
+		return
+	}
+	returnData["candidate"] = strings.Join(candidate, "|")
+
 	bytes := u.jsonToBytes(returnData)
 
 	// 送信（conn依存）
@@ -241,7 +229,7 @@ func (u *IWebsocketUsecase) candidateAdd(data map[string]any) {
 
 	target_id := data["target_id"].(string)
 	if target_id != "" {
-		if client, ok2 := clientsByID[target_id]; ok2 {
+		if client, err := u.repo.GetClientByID(target_id); err == nil {
 			// 相手が接続中
 			fmt.Println("[Candidate]")
 			resultData["type"] = "candidate"
@@ -255,13 +243,18 @@ func (u *IWebsocketUsecase) candidateAdd(data map[string]any) {
 	}
 
 	// 相手が還沒來 -> 保存
-	// candidateの存在確認（repo）
-	if _, ok := candidateData[id]; !ok {
-		// candidateの保存(repo)
-		candidateData[id] = []string{candidate}
+	if !u.repo.ExistsCandidateByID(id) {
+		err := u.repo.SaveCandidate(id, candidate)
+		if err != nil {
+			log.Println("Error saving candidate:", err)
+			return
+		}
 	} else {
-		// candidateの追加(repo)
-		candidateData[id] = append(candidateData[id], candidate)
+		err := u.repo.AddCandidate(id, candidate)
+		if err != nil {
+			log.Println("Error adding candidate:", err)
+			return
+		}
 	}
 }
 
@@ -271,7 +264,7 @@ func (u *IWebsocketUsecase) sendMessage(client *websocket.Conn, bytes []byte) {
 	if err != nil {
 		log.Println(err)
 		client.Close()
-		delete(clients, client)
+		u.repo.DeleteConnection(client)
 	}
 }
 
