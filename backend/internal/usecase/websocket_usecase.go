@@ -7,17 +7,15 @@ import (
 	"strings"
 
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
+	"example.com/webrtc-practice/internal/infrastructure/service_impl/offer_service"
 	"example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_broadcast"
 	"github.com/gorilla/websocket"
-)
-
-var (
-	offerId   string = ""
 )
 
 type IWebsocketUsecase struct {
 	repo repository_impl.WebsocketRepositoryImpl
 	br   websocketbroadcast.Broadcast
+	o offerservice.OfferService
 }
 
 func NewWebsocketUsecase() IWebsocketUsecase {
@@ -118,16 +116,16 @@ func (u *IWebsocketUsecase) connect(data map[string]any) {
 	}
 
 	// もしofferしている人がいなかったら
-	if len(offerId) == 0 {
+	if !u.o.IsOffer() {
 		// 現在offer中のIDを更新
-		offerId = id
+		u.o.SetOffer(id)
 		// offerをコールバック（送り主がofferを送ることを期待する）
 		resultData["type"] = "offer"
 		bytes := u.jsonToBytes(resultData)
 		// 送信（conn依存）
 		u.sendMessage(client, bytes)
 		return
-	} else if id == offerId { // offer中なのが自分だったら
+	} else if u.o.IsOfferID(id) { // offer中なのが自分だったら
 		// 重複なので何もしない
 		return
 	}
@@ -136,12 +134,12 @@ func (u *IWebsocketUsecase) connect(data map[string]any) {
 
 	// anser待機中の人が送ったofferを整形（offerを受け取った相手がanswerを送ることを期待する）
 	resultData["type"] = "offer"
-	resultData["sdp"], err = u.repo.GetSDPByID(offerId)
+	resultData["sdp"], err = u.repo.GetSDPByID(u.o.GetOffer())
 	if err != nil {
 		log.Println("SDP not found:", err)
 		return
 	}
-	resultData["target_id"] = offerId
+	resultData["target_id"] = u.o.GetOffer()
 	bytes := u.jsonToBytes(resultData)
 
 	// 送信（conn依存）
@@ -184,7 +182,7 @@ func (u *IWebsocketUsecase) sendAnswer(data map[string]any) {
 
 func (u *IWebsocketUsecase) sendCandidate(data map[string]any) {
 	returnData := make(map[string]string)
-	id := offerId
+	id := u.o.GetOffer()
 
 	if !u.repo.ExistsCandidateByID(id) {
 		return
