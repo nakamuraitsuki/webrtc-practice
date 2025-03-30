@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	broadcast            = make(chan []byte) // []byteだが、Message型を作りたい気持ちがある
-	offerId       string = ""
+	broadcast        = make(chan []byte) // []byteだが、Message型を作りたい気持ちがある
+	offerId   string = ""
 )
 
 type IWebsocketUsecase struct {
@@ -196,7 +196,7 @@ func (u *IWebsocketUsecase) sendCandidate(data map[string]any) {
 		log.Println("Client not found:", answerId)
 		return
 	}
-	
+
 	fmt.Println("candidate受け取り")
 	fmt.Println("[Candidate]")
 	returnData["type"] = "candidate"

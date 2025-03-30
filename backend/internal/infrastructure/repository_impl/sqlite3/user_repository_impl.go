@@ -17,11 +17,11 @@ func NewUserRepository(db *sqlx.DB) repository.IUserRepository {
 }
 
 type UserModel struct {
-	ID         int    `db:"id"`
-	Name       string `db:"name"`
-	Email      string `db:"email"`
-	PasswdHash string `db:"passwd_hash"`
-	CreatedAt  time.Time `db:"created_at"`
+	ID         int        `db:"id"`
+	Name       string     `db:"name"`
+	Email      string     `db:"email"`
+	PasswdHash string     `db:"passwd_hash"`
+	CreatedAt  time.Time  `db:"created_at"`
 	UpdatedAt  *time.Time `db:"updated_at"`
 }
 
@@ -91,11 +91,11 @@ func (ur *UserRepository) CreateUser(params repository.CreateUserParams) (*entit
 
 func (ur *UserRepository) UpdateUser(user *entity.User) (*entity.User, error) {
 	_, err := ur.db.Exec(`UPDATE users SET name = ?, email = ?, passwd_hash = ?, updated_at = ? WHERE id = ?`,
-	 user.GetName(), 
-	 user.GetEmail(), 
-	 user.GetPasswdHash(), 
-	 time.Now(), 
-	 user.GetID(),
+		user.GetName(),
+		user.GetEmail(),
+		user.GetPasswdHash(),
+		time.Now(),
+		user.GetID(),
 	)
 	if err != nil {
 		return nil, err
