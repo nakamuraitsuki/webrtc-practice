@@ -1,31 +1,33 @@
 package offerservice
 
-type OfferService struct {
+import "example.com/webrtc-practice/internal/domain/service"
+
+type OfferServiceImpl struct {
 	id string
 }
 
-func NewOfferService() OfferService {
-	return OfferService{
-		id : "",
+func NewOfferService() service.OfferService {
+	return &OfferServiceImpl{
+		id: "",
 	}
 }
 
-func (o *OfferService) SetOffer(id string) {
+func (o *OfferServiceImpl) SetOffer(id string) {
 	o.id = id
 }
 
-func (o *OfferService) GetOffer() string {
+func (o *OfferServiceImpl) GetOffer() string {
 	return o.id
 }
 
-func (o *OfferService) ClearOffer() {
+func (o *OfferServiceImpl) ClearOffer() {
 	o.id = ""
 }
 
-func (o *OfferService) IsOffer() bool {
+func (o *OfferServiceImpl) IsOffer() bool {
 	return o.id != ""
 }
 
-func (o *OfferService) IsOfferID(id string) bool {
+func (o *OfferServiceImpl) IsOfferID(id string) bool {
 	return o.id == id
 }

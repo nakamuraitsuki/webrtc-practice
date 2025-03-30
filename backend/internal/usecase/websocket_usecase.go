@@ -6,16 +6,15 @@ import (
 	"log"
 	"strings"
 
+	"example.com/webrtc-practice/internal/domain/service"
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
-	"example.com/webrtc-practice/internal/infrastructure/service_impl/offer_service"
-	"example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_broadcast"
 	"github.com/gorilla/websocket"
 )
 
 type IWebsocketUsecase struct {
 	repo repository_impl.WebsocketRepositoryImpl
-	br   websocketbroadcast.Broadcast
-	o offerservice.OfferService
+	br   service.WebSocketBroadcastService
+	o    service.OfferService
 }
 
 func NewWebsocketUsecase() IWebsocketUsecase {
