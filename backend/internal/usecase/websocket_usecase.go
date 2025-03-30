@@ -7,16 +7,17 @@ import (
 	"strings"
 
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
+	"example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_broadcast"
 	"github.com/gorilla/websocket"
 )
 
 var (
-	broadcast        = make(chan []byte) // []byteだが、Message型を作りたい気持ちがある
 	offerId   string = ""
 )
 
 type IWebsocketUsecase struct {
 	repo repository_impl.WebsocketRepositoryImpl
+	br   websocketbroadcast.Broadcast
 }
 
 func NewWebsocketUsecase() IWebsocketUsecase {
@@ -71,14 +72,14 @@ func (u *IWebsocketUsecase) ListenForMessages(conn *websocket.Conn) {
 
 			u.repo.RegisterID(conn, id)
 		}
-		broadcast <- message
+		u.br.Send(message)
 	}
 }
 
 // メッセージ待ち（ブロードキャスト　->　サーバー）
 func (u *IWebsocketUsecase) ProcessMessage() {
 	for {
-		message := <-broadcast
+		message := u.br.Receive()
 		// text -> json
 		var jsonStr = string(message)
 		fmt.Println(jsonStr)
