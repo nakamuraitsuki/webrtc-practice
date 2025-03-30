@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"sync"
 
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
 	"github.com/gorilla/websocket"
@@ -20,9 +19,7 @@ type IWebsocketUsecase struct {
 	repo repository_impl.WebsocketRepositoryImpl
 }
 
-func NewWebsocketUsecase(
-	mu *sync.Mutex,
-) IWebsocketUsecase {
+func NewWebsocketUsecase() IWebsocketUsecase {
 	return IWebsocketUsecase{
 		repo: *repository_impl.NewWebsocketRepositoryImpl(),
 	}

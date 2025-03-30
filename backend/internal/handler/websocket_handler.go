@@ -19,11 +19,9 @@ type WebsocketHandler struct {
 
 func NewWebsocketHandler(
 	mu *sync.Mutex,
-) WebsocketHandler {
-	h := WebsocketHandler{
-		Usecase: usecase.NewWebsocketUsecase(
-			mu,
-		),
+) *WebsocketHandler {
+	h := &WebsocketHandler{
+		Usecase: usecase.NewWebsocketUsecase(),
 	}
 
 	// WebSocketメッセージ処理のゴルーチンを起動
