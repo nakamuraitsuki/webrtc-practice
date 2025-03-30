@@ -12,7 +12,7 @@ type WebsocketRepositoryImpl struct {
 	clientsByID   map[string]*websocket.Conn
 	sdpData       map[string]string
 	candidateData map[string][]string
-	mu            sync.Mutex
+	mu            *sync.Mutex
 }
 
 func NewWebsocketRepositoryImpl() *WebsocketRepositoryImpl {
@@ -21,7 +21,7 @@ func NewWebsocketRepositoryImpl() *WebsocketRepositoryImpl {
 		clientsByID:   make(map[string]*websocket.Conn),
 		sdpData:       make(map[string]string),
 		candidateData: make(map[string][]string),
-		mu:            sync.Mutex{},
+		mu:            &sync.Mutex{},
 	}
 }
 

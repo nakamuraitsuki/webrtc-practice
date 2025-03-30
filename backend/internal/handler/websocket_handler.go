@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"sync"
 
 	"example.com/webrtc-practice/internal/usecase"
 	"github.com/gorilla/websocket"
@@ -18,9 +17,8 @@ type WebsocketHandler struct {
 }
 
 func NewWebsocketHandler(
-	mu *sync.Mutex,
-) *WebsocketHandler {
-	h := &WebsocketHandler{
+) WebsocketHandler {
+	h := WebsocketHandler{
 		Usecase: usecase.NewWebsocketUsecase(),
 	}
 

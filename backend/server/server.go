@@ -1,8 +1,6 @@
 package server
 
 import (
-	"sync"
-
 	"example.com/webrtc-practice/config"
 	"example.com/webrtc-practice/internal/handler"
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl/sqlite3"
@@ -31,7 +29,7 @@ func ServerStart(cfg *config.Config, db *sqlx.DB) {
 	userHandler := handler.NewUserHandler(userRepository, hasher, tokenService)
 
 	// WebSocketハンドラの初期化
-	websocketHandler := handler.NewWebsocketHandler(&sync.Mutex{})
+	websocketHandler := handler.NewWebsocketHandler()
 
 	routes.SetupRoutes(e, cfg, userHandler, websocketHandler)
 
