@@ -3,6 +3,8 @@ package repository_impl
 import (
 	"errors"
 	"sync"
+
+	"example.com/webrtc-practice/internal/domain/repository"
 )
 
 type WebsocketRepositoryImpl struct {
@@ -11,7 +13,7 @@ type WebsocketRepositoryImpl struct {
 	mu            *sync.Mutex
 }
 
-func NewWebsocketRepositoryImpl() *WebsocketRepositoryImpl {
+func NewWebsocketRepositoryImpl() repository.IWebsocketRepository {
 	return &WebsocketRepositoryImpl{
 		sdpData:       make(map[string]string),
 		candidateData: make(map[string][]string),
@@ -82,3 +84,18 @@ func (wr *WebsocketRepositoryImpl) ExistsCandidateByID(id string) bool {
 	_, exists := wr.candidateData[id]
 	return exists
 }
+
+func (wr *WebsocketRepositoryImpl) DeleteSDP(id string) error {
+	// ミューテーションロックを使用して、同時アクセスを防止
+	wr.mu.Lock()
+	defer wr.mu.Unlock()
+
+	if _, exists := wr.sdpData[id]; !exists {
+		return errors.New("SDP not found")
+	}
+
+	delete(wr.sdpData, id)
+	delete(wr.candidateData, id)
+	return nil
+}
+

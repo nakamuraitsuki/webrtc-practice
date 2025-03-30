@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"example.com/webrtc-practice/internal/domain/repository"
 	"example.com/webrtc-practice/internal/domain/service"
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
 	offerservice "example.com/webrtc-practice/internal/infrastructure/service_impl/offer_service"
@@ -15,7 +16,7 @@ import (
 )
 
 type IWebsocketUsecase struct {
-	repo repository_impl.WebsocketRepositoryImpl
+	repo repository.IWebsocketRepository
 	wm   service.WebsocketManager
 	br   service.WebSocketBroadcastService
 	o    service.OfferService
@@ -23,7 +24,7 @@ type IWebsocketUsecase struct {
 
 func NewWebsocketUsecase() IWebsocketUsecase {
 	return IWebsocketUsecase{
-		repo: *repository_impl.NewWebsocketRepositoryImpl(),
+		repo: repository_impl.NewWebsocketRepositoryImpl(),
 		wm:   websocketmanager.NewWebsocketManager(),
 		br:   websocketbroadcast.NewBroadcast(),
 		o:    offerservice.NewOfferService(),
