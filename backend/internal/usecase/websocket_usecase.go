@@ -76,6 +76,7 @@ func (u *IWebsocketUsecase) ListenForMessages(conn service.WebSocketConnection) 
 			}
 
 			u.wm.RegisterID(conn, id)
+			u.repo.CreateClient(id)
 		}
 		u.br.Send(message)
 	}

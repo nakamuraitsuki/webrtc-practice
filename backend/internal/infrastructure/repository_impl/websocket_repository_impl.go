@@ -21,6 +21,20 @@ func NewWebsocketRepositoryImpl() repository.IWebsocketRepository {
 	}
 }
 
+func (wr *WebsocketRepositoryImpl) CreateClient(id string) error {
+	// ミューテーションロックを使用して、同時アクセスを防止
+	wr.mu.Lock()
+	defer wr.mu.Unlock()
+
+	if _, exists := wr.sdpData[id]; exists {
+		return errors.New("client already exists")
+	}
+
+	wr.sdpData[id] = ""
+	wr.candidateData[id] = []string{}
+	return nil
+}
+
 func (wr *WebsocketRepositoryImpl) SaveSDP(id string, sdp string) error {
 	// ミューテーションロックを使用して、同時アクセスを防止
 	wr.mu.Lock()
