@@ -1,22 +1,25 @@
 package websocketbroadcast
 
-import "example.com/webrtc-practice/internal/domain/service"
+import (
+	"example.com/webrtc-practice/internal/domain/entity"
+	"example.com/webrtc-practice/internal/domain/service"
+)
 
 // TODO ： Message型をやり取りするようにする
 type Broadcast struct {
-	broadcast chan []byte
+	broadcast chan entity.Message
 }
 
 func NewBroadcast() service.WebSocketBroadcastService {
 	return &Broadcast{
-		broadcast: make(chan []byte),
+		broadcast: make(chan entity.Message),
 	}
 }
 
-func (b *Broadcast) Send(message []byte) {
+func (b *Broadcast) Send(message entity.Message) {
 	b.broadcast <- message
 }
 
-func (b *Broadcast) Receive() []byte {
+func (b *Broadcast) Receive() entity.Message {
 	return <-b.broadcast
 }

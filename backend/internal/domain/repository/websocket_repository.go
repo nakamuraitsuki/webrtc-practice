@@ -8,5 +8,4 @@ type IWebsocketRepository interface {
 	AddCandidate(id string, candidate string) error
 	ExistsCandidateByID(id string) bool
 	GetCandidatesByID(id string) ([]string, error)
-	DeleteSDP(id string) error
 }
