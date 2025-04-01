@@ -4,20 +4,19 @@ import (
 	"errors"
 	"sync"
 
+	"example.com/webrtc-practice/internal/domain/entity"
 	"example.com/webrtc-practice/internal/domain/repository"
 )
 
 type WebsocketRepositoryImpl struct {
-	sdpData       map[string]string
-	candidateData map[string][]string
-	mu            *sync.Mutex
+	clientData map[string]*entity.WebsocketClient
+	mu         *sync.Mutex
 }
 
 func NewWebsocketRepositoryImpl() repository.IWebsocketRepository {
 	return &WebsocketRepositoryImpl{
-		sdpData:       make(map[string]string),
-		candidateData: make(map[string][]string),
-		mu:            &sync.Mutex{},
+		clientData: make(map[string]*entity.WebsocketClient),
+		mu:         &sync.Mutex{},
 	}
 }
 
@@ -26,12 +25,12 @@ func (wr *WebsocketRepositoryImpl) CreateClient(id string) error {
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
 
-	if _, exists := wr.sdpData[id]; exists {
+	if _, exists := wr.clientData[id]; exists {
 		return errors.New("client already exists")
 	}
 
-	wr.sdpData[id] = ""
-	wr.candidateData[id] = []string{}
+	wr.clientData[id] = entity.NewWebsocketClient(id,"",nil)
+
 	return nil
 }
 
@@ -40,7 +39,12 @@ func (wr *WebsocketRepositoryImpl) SaveSDP(id string, sdp string) error {
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
 
-	wr.sdpData[id] = sdp
+	client, exists := wr.clientData[id]
+	if !exists {
+		return errors.New("client not found")
+	}
+	client.SDP = sdp
+
 	return nil
 }
 
@@ -49,11 +53,11 @@ func (wr *WebsocketRepositoryImpl) GetSDPByID(id string) (string, error) {
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
 
-	sdp, exists := wr.sdpData[id]
-	if !exists {
+	client, exists := wr.clientData[id]
+	if !exists || client.SDP == "" {
 		return "", errors.New("SDP not found")
 	}
-	return sdp, nil
+	return client.SDP, nil
 }
 
 func (wr *WebsocketRepositoryImpl) SaveCandidate(id string, candidate string) error {
@@ -61,7 +65,12 @@ func (wr *WebsocketRepositoryImpl) SaveCandidate(id string, candidate string) er
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
 
-	wr.candidateData[id] = []string{candidate}
+	client, exists := wr.clientData[id]
+	if !exists {
+		return errors.New("client not found")
+	}
+	client.Candidate = []string{candidate}
+	
 	return nil
 }
 
@@ -70,11 +79,12 @@ func (wr *WebsocketRepositoryImpl) AddCandidate(id string, candidate string) err
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
 
-	if _, exists := wr.candidateData[id]; !exists {
+	client, exists := wr.clientData[id]
+	if !exists || client.Candidate == nil {
 		return errors.New("candidates not found")
 	}
 
-	wr.candidateData[id] = append(wr.candidateData[id], candidate)
+	client.Candidate = append(client.Candidate, candidate)
 	return nil
 }
 
@@ -83,11 +93,11 @@ func (wr *WebsocketRepositoryImpl) GetCandidatesByID(id string) ([]string, error
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
 
-	candidates, exists := wr.candidateData[id]
+	client, exists := wr.clientData[id]
 	if !exists {
 		return nil, errors.New("candidates not found")
 	}
-	return candidates, nil
+	return client.Candidate, nil
 }
 
 func (wr *WebsocketRepositoryImpl) ExistsCandidateByID(id string) bool {
@@ -95,21 +105,6 @@ func (wr *WebsocketRepositoryImpl) ExistsCandidateByID(id string) bool {
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
 
-	_, exists := wr.candidateData[id]
-	return exists
+	client, exists := wr.clientData[id]
+	return client.Candidate != nil && exists
 }
-
-func (wr *WebsocketRepositoryImpl) DeleteSDP(id string) error {
-	// ミューテーションロックを使用して、同時アクセスを防止
-	wr.mu.Lock()
-	defer wr.mu.Unlock()
-
-	if _, exists := wr.sdpData[id]; !exists {
-		return errors.New("SDP not found")
-	}
-
-	delete(wr.sdpData, id)
-	delete(wr.candidateData, id)
-	return nil
-}
-
