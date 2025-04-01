@@ -34,6 +34,17 @@ func (wr *WebsocketRepositoryImpl) CreateClient(id string) error {
 	return nil
 }
 
+func (wr *WebsocketRepositoryImpl) DeleteClient(id string) error {
+	// ミューテーションロックを使用して、同時アクセスを防止
+	wr.mu.Lock()
+	defer wr.mu.Unlock()
+	if _, exists := wr.clientData[id]; !exists {
+		return errors.New("client not found")
+	}
+	delete(wr.clientData, id)
+	return nil
+}
+
 func (wr *WebsocketRepositoryImpl) SaveSDP(id string, sdp string) error {
 	// ミューテーションロックを使用して、同時アクセスを防止
 	wr.mu.Lock()

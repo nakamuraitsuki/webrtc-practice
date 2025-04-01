@@ -48,6 +48,7 @@ func (u *IWebsocketUsecase) ListenForMessages(conn service.WebSocketConnection) 
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			u.wm.DeleteConnection(conn)
+			u.repo.DeleteClient(clientID)
 			break
 		}
 		// メッセージ抽出
