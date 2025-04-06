@@ -4,15 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 
 	"example.com/webrtc-practice/internal/domain/entity"
 	"example.com/webrtc-practice/internal/domain/repository"
 	"example.com/webrtc-practice/internal/domain/service"
-	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
-	offerservice "example.com/webrtc-practice/internal/infrastructure/service_impl/offer_service"
-	websocketbroadcast "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_broadcast"
-	websocketmanager "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_manager"
 	"github.com/gorilla/websocket"
 )
 
@@ -23,12 +18,17 @@ type IWebsocketUsecase struct {
 	o    service.OfferService
 }
 
-func NewWebsocketUsecase() IWebsocketUsecase {
-	return IWebsocketUsecase{
-		repo: repository_impl.NewWebsocketRepositoryImpl(),
-		wm:   websocketmanager.NewWebsocketManager(),
-		br:   websocketbroadcast.NewBroadcast(),
-		o:    offerservice.NewOfferService(),
+func NewWebsocketUsecase(
+	repo repository.IWebsocketRepository,
+	wm service.WebsocketManager,
+	br service.WebSocketBroadcastService,
+	o service.OfferService,
+) *IWebsocketUsecase {
+	return &IWebsocketUsecase{
+		repo: repo,
+		wm:   wm,
+		br:   br,
+		o:    o,
 	}
 }
 
@@ -65,8 +65,6 @@ func (u *IWebsocketUsecase) ListenForMessages(conn service.WebSocketConnection) 
 
 		// 初回ID登録
 		if clientID == "" {
-
-
 			// idの取得
 			id := data.ID
 			clientID = data.ID
@@ -108,7 +106,7 @@ func (u *IWebsocketUsecase) ProcessMessage() {
 }
 
 func (u *IWebsocketUsecase) connect(message entity.Message) {
-	resultData := make(map[string]string)
+	resultData := entity.Message{}
 
 	// メッセージの送り主を取得
 	id := message.ID
@@ -124,8 +122,13 @@ func (u *IWebsocketUsecase) connect(message entity.Message) {
 		// 現在offer中のIDを更新
 		u.o.SetOffer(id)
 		// offerをコールバック（送り主がofferを送ることを期待する）
-		resultData["type"] = "offer"
-		bytes := u.jsonToBytes(resultData)
+		resultData.Type = "offer"
+		bytes, err := json.Marshal(resultData)
+		if err != nil {
+			log.Println("Error marshalling message:", err)
+			return
+		}
+
 		// 送信
 		u.sendMessage(client, bytes)
 		return
@@ -137,14 +140,18 @@ func (u *IWebsocketUsecase) connect(message entity.Message) {
 	// もし自分以外のofferしている人がいたら。
 
 	// anser待機中の人が送ったofferを整形（offerを受け取った相手がanswerを送ることを期待する）
-	resultData["type"] = "offer"
-	resultData["sdp"], err = u.repo.GetSDPByID(u.o.GetOffer())
+	resultData.Type = "offer"
+	resultData.SDP, err = u.repo.GetSDPByID(u.o.GetOffer())
 	if err != nil {
 		log.Println("SDP not found:", err)
 		return
 	}
-	resultData["target_id"] = u.o.GetOffer()
-	bytes := u.jsonToBytes(resultData)
+	resultData.TargetID = u.o.GetOffer()
+	bytes, err := json.Marshal(resultData)
+	if err != nil {
+		log.Println("Error marshalling message:", err)
+		return
+	}
 
 	// 送信
 	u.sendMessage(client, bytes)
@@ -168,11 +175,10 @@ func (u *IWebsocketUsecase) answer(message entity.Message) {
 
 func (u *IWebsocketUsecase) sendAnswer(message entity.Message) {
 	fmt.Println("[Answer]")
-	resultData := make(map[string]string)
-	resultData["type"] = "answer"
+	resultData := entity.Message{}
+	resultData.Type = "answer"
 	target_id := message.TargetID
-	sdp, _ := json.Marshal(message.SDP)
-	resultData["sdp"] = string(sdp)
+	resultData.SDP = message.SDP
 
 	client, err := u.wm.GetConnectionByID(target_id)
 	if err != nil {
@@ -180,12 +186,12 @@ func (u *IWebsocketUsecase) sendAnswer(message entity.Message) {
 		return
 	}
 
-	bytes := u.jsonToBytes(resultData)
+	bytes, _ := json.Marshal(resultData)
 	u.sendMessage(client, bytes)
 }
 
 func (u *IWebsocketUsecase) sendCandidate(message entity.Message) {
-	returnData := make(map[string]string)
+	returnData := entity.Message{}
 	id := u.o.GetOffer()
 
 	if !u.repo.ExistsCandidateByID(id) {
@@ -202,16 +208,16 @@ func (u *IWebsocketUsecase) sendCandidate(message entity.Message) {
 
 	fmt.Println("candidate受け取り")
 	fmt.Println("[Candidate]")
-	returnData["type"] = "candidate"
+	returnData.Type = "candidate"
 
 	candidate, err := u.repo.GetCandidatesByID(id)
 	if err != nil {
 		log.Println("Candidate not found:", err)
 		return
 	}
-	returnData["candidate"] = strings.Join(candidate, "|")
+	returnData.Candidate = candidate
 
-	bytes := u.jsonToBytes(returnData)
+	bytes, _ := json.Marshal(returnData)
 
 	// 送信
 	u.sendMessage(client, bytes)
@@ -220,21 +226,20 @@ func (u *IWebsocketUsecase) sendCandidate(message entity.Message) {
 
 func (u *IWebsocketUsecase) candidateAdd(message entity.Message) {
 	fmt.Println("[Candidate Add]")
-	resultData := make(map[string]string)
+	resultData := entity.Message{}
 
 	// 相手が通話中なら、candidateDataに入れずに直接送る
 	id := message.ID
-	candidateByte, _ := json.Marshal(message.Candidate)
-	candidate := string(candidateByte)
+	candidate := message.Candidate
 
 	target_id := message.TargetID
 	if target_id != "" {
 		if client, err := u.wm.GetConnectionByID(target_id); err == nil {
 			// 相手が接続中
 			fmt.Println("[Candidate]")
-			resultData["type"] = "candidate"
-			resultData["candidate"] = candidate
-			bytes := u.jsonToBytes(resultData)
+			resultData.Type = "candidate"
+			resultData.Candidate = candidate
+			bytes, _ := json.Marshal(resultData)
 
 			// 送信
 			u.sendMessage(client, bytes)
@@ -267,12 +272,3 @@ func (u *IWebsocketUsecase) sendMessage(client service.WebSocketConnection, byte
 	}
 }
 
-func (u *IWebsocketUsecase) jsonToBytes(result map[string]string) []byte {
-	jsonText, err := json.Marshal(result)
-	if err != nil {
-		panic(err)
-	}
-
-	bytes := []byte(jsonText)
-	return bytes
-}

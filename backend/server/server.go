@@ -3,9 +3,13 @@ package server
 import (
 	"example.com/webrtc-practice/config"
 	"example.com/webrtc-practice/internal/handler"
+	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl/sqlite3"
 	"example.com/webrtc-practice/internal/infrastructure/service_impl/hasher"
 	"example.com/webrtc-practice/internal/infrastructure/service_impl/jwt"
+	offerservice "example.com/webrtc-practice/internal/infrastructure/service_impl/offer_service"
+	websocketbroadcast "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_broadcast"
+	websocketmanager "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_manager"
 	"example.com/webrtc-practice/routes"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
@@ -29,7 +33,17 @@ func ServerStart(cfg *config.Config, db *sqlx.DB) {
 	userHandler := handler.NewUserHandler(userRepository, hasher, tokenService)
 
 	// WebSocketハンドラの初期化
-	websocketHandler := handler.NewWebsocketHandler()
+	websocketRepository := repository_impl.NewWebsocketRepository()
+	websocketManager := websocketmanager.NewWebsocketManager()
+	websocketBroadcast := websocketbroadcast.NewBroadcast()
+	websocketOfferService := offerservice.NewOfferService()
+
+	websocketHandler := handler.NewWebsocketHandler(
+		websocketRepository,
+		websocketManager,
+		websocketBroadcast,
+		websocketOfferService,
+	)
 
 	routes.SetupRoutes(e, cfg, userHandler, websocketHandler)
 

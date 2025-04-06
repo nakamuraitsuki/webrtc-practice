@@ -13,7 +13,7 @@ type WebsocketRepositoryImpl struct {
 	mu         *sync.Mutex
 }
 
-func NewWebsocketRepositoryImpl() repository.IWebsocketRepository {
+func NewWebsocketRepository() repository.IWebsocketRepository {
 	return &WebsocketRepositoryImpl{
 		clientData: make(map[string]*entity.WebsocketClient),
 		mu:         &sync.Mutex{},
@@ -71,7 +71,7 @@ func (wr *WebsocketRepositoryImpl) GetSDPByID(id string) (string, error) {
 	return client.SDP, nil
 }
 
-func (wr *WebsocketRepositoryImpl) SaveCandidate(id string, candidate string) error {
+func (wr *WebsocketRepositoryImpl) SaveCandidate(id string, candidate []string) error {
 	// ミューテーションロックを使用して、同時アクセスを防止
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
@@ -80,12 +80,12 @@ func (wr *WebsocketRepositoryImpl) SaveCandidate(id string, candidate string) er
 	if !exists {
 		return errors.New("client not found")
 	}
-	client.Candidate = []string{candidate}
+	client.Candidate = append(client.Candidate, candidate...)
 	
 	return nil
 }
 
-func (wr *WebsocketRepositoryImpl) AddCandidate(id string, candidate string) error {
+func (wr *WebsocketRepositoryImpl) AddCandidate(id string, candidate []string) error {
 	// ミューテーションロックを使用して、同時アクセスを防止
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
@@ -95,7 +95,7 @@ func (wr *WebsocketRepositoryImpl) AddCandidate(id string, candidate string) err
 		return errors.New("candidates not found")
 	}
 
-	client.Candidate = append(client.Candidate, candidate)
+	client.Candidate = append(client.Candidate, candidate...)
 	return nil
 }
 
