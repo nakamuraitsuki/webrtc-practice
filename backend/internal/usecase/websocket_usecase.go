@@ -8,7 +8,6 @@ import (
 	"example.com/webrtc-practice/internal/domain/entity"
 	"example.com/webrtc-practice/internal/domain/repository"
 	"example.com/webrtc-practice/internal/domain/service"
-	"github.com/gorilla/websocket"
 )
 
 type IWebsocketUsecase struct {
@@ -130,7 +129,7 @@ func (u *IWebsocketUsecase) connect(message entity.Message) {
 		}
 
 		// 送信
-		u.sendMessage(client, bytes)
+		client.WriteMessage(bytes)
 		return
 	} else if u.o.IsOfferID(id) { // offer中なのが自分だったら
 		// 重複なので何もしない
@@ -154,7 +153,7 @@ func (u *IWebsocketUsecase) connect(message entity.Message) {
 	}
 
 	// 送信
-	u.sendMessage(client, bytes)
+	client.WriteMessage(bytes)
 }
 
 func (u *IWebsocketUsecase) offer(message entity.Message) {
@@ -187,7 +186,8 @@ func (u *IWebsocketUsecase) sendAnswer(message entity.Message) {
 	}
 
 	bytes, _ := json.Marshal(resultData)
-	u.sendMessage(client, bytes)
+
+	client.WriteMessage(bytes)
 }
 
 func (u *IWebsocketUsecase) sendCandidate(message entity.Message) {
@@ -220,7 +220,7 @@ func (u *IWebsocketUsecase) sendCandidate(message entity.Message) {
 	bytes, _ := json.Marshal(returnData)
 
 	// 送信
-	u.sendMessage(client, bytes)
+	client.WriteMessage(bytes)
 
 }
 
@@ -242,7 +242,7 @@ func (u *IWebsocketUsecase) candidateAdd(message entity.Message) {
 			bytes, _ := json.Marshal(resultData)
 
 			// 送信
-			u.sendMessage(client, bytes)
+			client.WriteMessage(bytes)
 			return
 		}
 	}
@@ -262,13 +262,5 @@ func (u *IWebsocketUsecase) candidateAdd(message entity.Message) {
 	}
 }
 
-// message送信
-func (u *IWebsocketUsecase) sendMessage(client service.WebSocketConnection, bytes []byte) {
-	err := client.WriteMessage(websocket.TextMessage, bytes)
-	if err != nil {
-		log.Println(err)
-		u.wm.DeleteConnection(client)
-		// ハンドラ内で defer conn.Close() の使用を期待してコネクションの閉鎖はしない
-	}
-}
+
 

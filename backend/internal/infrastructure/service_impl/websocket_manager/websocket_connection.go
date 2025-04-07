@@ -19,8 +19,8 @@ func (w *WebSocketConnectionImpl) ReadMessage() (int, []byte, error) {
 	return w.conn.ReadMessage()
 }
 
-func (w *WebSocketConnectionImpl) WriteMessage(messageType int, data []byte) error {
-	return w.conn.WriteMessage(messageType, data)
+func (w *WebSocketConnectionImpl) WriteMessage(data []byte) error {
+	return w.conn.WriteMessage(websocket.TextMessage, data)
 }
 
 func (w *WebSocketConnectionImpl) Close() error {

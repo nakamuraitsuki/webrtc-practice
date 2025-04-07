@@ -2,7 +2,7 @@ package service
 
 type WebSocketConnection interface {
 	ReadMessage() (int, []byte, error)
-	WriteMessage(int, []byte) error
+	WriteMessage([]byte) error
 	Close() error
 }
 
