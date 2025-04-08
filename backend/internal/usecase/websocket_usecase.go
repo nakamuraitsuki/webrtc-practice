@@ -171,7 +171,7 @@ func (u *IWebsocketUsecase) Answer(message entity.Message) {
 func (u *IWebsocketUsecase) Candidate(message entity.Message) {
 	fmt.Println("[Candidate]")
 	// candidateを保存
-	resultData := u.candidateAdd(message); 
+	resultData := u.CandidateAdd(message); 
 	if resultData != nil {
 		// candidateを送信
 		u.SendCandidate(*resultData)
@@ -179,7 +179,7 @@ func (u *IWebsocketUsecase) Candidate(message entity.Message) {
 }
 
 // 別途送信の必要がある場合のみnilではない値を返し、sendCandidateを呼ぶ
-func (u *IWebsocketUsecase) candidateAdd(message entity.Message) *entity.Message{
+func (u *IWebsocketUsecase) CandidateAdd(message entity.Message) *entity.Message{
 	fmt.Println("[Candidate Add]")
 	resultData := entity.Message{}
 	
