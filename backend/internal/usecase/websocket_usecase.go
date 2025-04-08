@@ -171,15 +171,14 @@ func (u *IWebsocketUsecase) Answer(message entity.Message) {
 func (u *IWebsocketUsecase) Candidate(message entity.Message) {
 	fmt.Println("[Candidate]")
 	// candidateを保存
-	resultData := u.CandidateAdd(message); 
-	if resultData != nil {
-		// candidateを送信
-		u.SendCandidate(*resultData)
+	result := u.CandidateAdd(message); 
+	if result {
+		u.SendCandidate(message)
 	}
 }
 
-// 別途送信の必要がある場合のみnilではない値を返し、sendCandidateを呼ぶ
-func (u *IWebsocketUsecase) CandidateAdd(message entity.Message) *entity.Message{
+// 別途送信の必要がある場合のみtrueを返し、sendCandidateを呼ぶ
+func (u *IWebsocketUsecase) CandidateAdd(message entity.Message) bool {
 	fmt.Println("[Candidate Add]")
 	resultData := entity.Message{}
 	
@@ -187,11 +186,12 @@ func (u *IWebsocketUsecase) CandidateAdd(message entity.Message) *entity.Message
 	candidate := message.Candidate
 	targetID := message.TargetID
 	
-	// 相手が接続中なら candidate を即時送信
+	// 通信相手の認知が完了している -> 直接送信
 	if targetID != "" {
 		if client, err := u.wm.GetConnectionByID(targetID); err == nil {
 			fmt.Println("[Candidate]")
 			resultData.Type = "candidate"
+			resultData.ID = id
 			resultData.Candidate = candidate
 			client.WriteMessage(resultData)
 		}
@@ -201,12 +201,12 @@ func (u *IWebsocketUsecase) CandidateAdd(message entity.Message) *entity.Message
 	if !u.repo.ExistsCandidateByID(id) {
 		if err := u.repo.SaveCandidate(id, candidate); err != nil {
 			log.Println("Error saving candidate:", err)
-			return nil
+			return false
 		}
 	} else {
 		if err := u.repo.AddCandidate(id, candidate); err != nil {
 			log.Println("Error adding candidate:", err)
-			return nil
+			return false
 		}
 	}
 	
@@ -214,10 +214,10 @@ func (u *IWebsocketUsecase) CandidateAdd(message entity.Message) *entity.Message
 	// Offerer 側の candidate を送る
 	if u.o.IsOfferID(message.TargetID) {
 		// Offerer から answerer に candidate を送る
-		return &resultData
+		return true
 	}
 
-	return nil
+	return false
 }
 	
 func (u *IWebsocketUsecase) SendCandidate(message entity.Message) {
@@ -232,10 +232,10 @@ func (u *IWebsocketUsecase) SendCandidate(message entity.Message) {
 	answerId := message.ID
 	// クライアントの取得（repo）
 	client, err := u.wm.GetConnectionByID(answerId)
-	if err == nil {
+	if err != nil {
 		log.Println("Client not found:", answerId)
 		return
-	}
+	}	
 
 	fmt.Println("candidate受け取り")
 	fmt.Println("[Candidate]")
