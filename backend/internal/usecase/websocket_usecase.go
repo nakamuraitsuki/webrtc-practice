@@ -149,12 +149,6 @@ func (u *IWebsocketUsecase) Offer(message entity.Message) {
 }
 
 func (u *IWebsocketUsecase) Answer(message entity.Message) {
-	// offerの送り主にanswerを返す
-	// answerを送られたclientはaddCandidateを呼ぶことを期待する
-	u.SendAnswer(message)
-}
-
-func (u *IWebsocketUsecase) SendAnswer(message entity.Message) {
 	fmt.Println("[Answer]")
 	targetID := message.TargetID
 
