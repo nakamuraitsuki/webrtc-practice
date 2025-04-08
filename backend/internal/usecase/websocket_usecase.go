@@ -100,6 +100,7 @@ func (u *IWebsocketUsecase) Connect(message entity.Message) {
 
 	// メッセージの送り主を取得
 	id := message.ID
+	resultData.ID = id
 	// IDからクライアントを取得(repo)
 	client, err := u.wm.GetConnectionByID(id)
 	if err != nil {
