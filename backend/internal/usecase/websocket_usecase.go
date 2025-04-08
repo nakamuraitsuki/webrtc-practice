@@ -96,11 +96,8 @@ func (u *IWebsocketUsecase) ProcessMessage() {
 }
 
 func (u *IWebsocketUsecase) Connect(message entity.Message) {
-	resultData := entity.Message{}
-
 	// メッセージの送り主を取得
 	id := message.ID
-	resultData.ID = id
 	// IDからクライアントを取得(repo)
 	client, err := u.wm.GetConnectionByID(id)
 	if err != nil {
@@ -113,8 +110,10 @@ func (u *IWebsocketUsecase) Connect(message entity.Message) {
 		// 現在offer中のIDを更新
 		u.o.SetOffer(id)
 		// offerをコールバック（送り主がofferを送ることを期待する）
-		resultData.Type = "offer"
-
+		resultData := entity.Message{
+			ID:   id,
+			Type: "offer",
+		}
 		// 送信
 		client.WriteMessage(resultData)
 		return
@@ -126,14 +125,19 @@ func (u *IWebsocketUsecase) Connect(message entity.Message) {
 	// もし自分以外のofferしている人がいたら。
 
 	// anser待機中の人が送ったofferを整形（offerを受け取った相手がanswerを送ることを期待する）
-	resultData.Type = "offer"
-	resultData.SDP, err = u.repo.GetSDPByID(u.o.GetOffer())
+	sdp, err := u.repo.GetSDPByID(u.o.GetOffer())
 	if err != nil {
 		log.Println("SDP not found:", err)
 		return
 	}
-	resultData.TargetID = u.o.GetOffer()
+	targetID := u.o.GetOffer()
 
+	resultData := entity.Message{
+		ID:       id,
+		Type:     "offer",
+		SDP:      sdp,
+		TargetID: targetID,
+	}
 	// 送信
 	client.WriteMessage(resultData)
 }
@@ -146,23 +150,25 @@ func (u *IWebsocketUsecase) Offer(message entity.Message) {
 
 func (u *IWebsocketUsecase) Answer(message entity.Message) {
 	// offerの送り主にanswerを返す
+	// answerを送られたclientはaddCandidateを呼ぶことを期待する
 	u.SendAnswer(message)
-
-	// answerの送り主にcandidateを送る
-	u.SendCandidate(message)
 }
 
 func (u *IWebsocketUsecase) SendAnswer(message entity.Message) {
 	fmt.Println("[Answer]")
-	resultData := entity.Message{}
-	resultData.Type = "answer"
-	target_id := message.TargetID
-	resultData.SDP = message.SDP
+	targetID := message.TargetID
 
-	client, err := u.wm.GetConnectionByID(target_id)
+	client, err := u.wm.GetConnectionByID(targetID)
 	if err != nil {
 		log.Println("Client not found:", err)
 		return
+	}
+
+	resultData := entity.Message{
+		ID : message.ID,
+		Type: "answer",
+		SDP: message.SDP,
+		TargetID: targetID,
 	}
 
 	client.WriteMessage(resultData)
@@ -170,6 +176,7 @@ func (u *IWebsocketUsecase) SendAnswer(message entity.Message) {
 
 func (u *IWebsocketUsecase) SendCandidate(message entity.Message) {
 	returnData := entity.Message{}
+	// 送信元の名義
 	id := u.o.GetOffer()
 
 	if !u.repo.ExistsCandidateByID(id) {
@@ -197,45 +204,44 @@ func (u *IWebsocketUsecase) SendCandidate(message entity.Message) {
 
 	// 送信
 	client.WriteMessage(returnData)
-
 }
 
+// candidateAdd() の最後で SendCandidate を呼び出す
 func (u *IWebsocketUsecase) candidateAdd(message entity.Message) {
 	fmt.Println("[Candidate Add]")
 	resultData := entity.Message{}
 
-	// 相手が通話中なら、candidateDataに入れずに直接送る
 	id := message.ID
 	candidate := message.Candidate
+	targetID := message.TargetID
 
-	target_id := message.TargetID
-	if target_id != "" {
-		if client, err := u.wm.GetConnectionByID(target_id); err == nil {
-			// 相手が接続中
+	// 相手が接続中なら candidate を即時送信
+	if targetID != "" {
+		if client, err := u.wm.GetConnectionByID(targetID); err == nil {
 			fmt.Println("[Candidate]")
 			resultData.Type = "candidate"
 			resultData.Candidate = candidate
-
-			// 送信
 			client.WriteMessage(resultData)
-			return
 		}
 	}
 
+	// 保存（初回 or 追加）
 	if !u.repo.ExistsCandidateByID(id) {
-		err := u.repo.SaveCandidate(id, candidate)
-		if err != nil {
+		if err := u.repo.SaveCandidate(id, candidate); err != nil {
 			log.Println("Error saving candidate:", err)
 			return
 		}
 	} else {
-		err := u.repo.AddCandidate(id, candidate)
-		if err != nil {
+		if err := u.repo.AddCandidate(id, candidate); err != nil {
 			log.Println("Error adding candidate:", err)
 			return
 		}
 	}
+
+	// Answerer から送られてきた candidateAdd であれば、
+	// Offerer 側の candidate を送る
+	if u.o.IsOfferID(message.TargetID) {
+		// Offerer から answerer に candidate を送る
+		u.SendCandidate(message)
+	}
 }
-
-
-
