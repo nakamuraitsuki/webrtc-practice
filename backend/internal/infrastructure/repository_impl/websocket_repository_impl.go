@@ -117,5 +117,6 @@ func (wr *WebsocketRepositoryImpl) ExistsCandidateByID(id string) bool {
 	defer wr.mu.Unlock()
 
 	client, exists := wr.clientData[id]
-	return client.Candidate != nil && exists
+	// existsを先に調べ、nullポインタへのアクセスを防ぐ
+	return exists && client.Candidate != nil
 }
