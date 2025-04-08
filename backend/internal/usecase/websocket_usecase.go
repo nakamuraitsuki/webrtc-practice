@@ -100,6 +100,8 @@ func (u *IWebsocketUsecase) ProcessMessage() {
 			u.answer(message)
 		case "candidateAdd":
 			u.candidateAdd(message)
+		default:
+			log.Println("Unknown message type:", msgType)
 		}
 	}
 }
