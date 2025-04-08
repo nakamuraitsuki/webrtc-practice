@@ -88,7 +88,7 @@ func (u *IWebsocketUsecase) ProcessMessage() {
 		case "answer":
 			u.Answer(message)
 		case "candidateAdd":
-			u.candidateAdd(message)
+			u.Candidate(message)
 		default:
 			log.Println("Unknown message type:", msgType)
 		}
@@ -174,8 +174,18 @@ func (u *IWebsocketUsecase) SendAnswer(message entity.Message) {
 	client.WriteMessage(resultData)
 }
 
-// candidateAdd() の最後で SendCandidate を呼び出す
-func (u *IWebsocketUsecase) candidateAdd(message entity.Message) {
+func (u *IWebsocketUsecase) Candidate(message entity.Message) {
+	fmt.Println("[Candidate]")
+	// candidateを保存
+	resultData := u.candidateAdd(message); 
+	if resultData != nil {
+		// candidateを送信
+		u.SendCandidate(*resultData)
+	}
+}
+
+// 別途送信の必要がある場合のみnilではない値を返し、sendCandidateを呼ぶ
+func (u *IWebsocketUsecase) candidateAdd(message entity.Message) *entity.Message{
 	fmt.Println("[Candidate Add]")
 	resultData := entity.Message{}
 	
@@ -197,51 +207,53 @@ func (u *IWebsocketUsecase) candidateAdd(message entity.Message) {
 	if !u.repo.ExistsCandidateByID(id) {
 		if err := u.repo.SaveCandidate(id, candidate); err != nil {
 			log.Println("Error saving candidate:", err)
-			return
+			return nil
 		}
-		} else {
-			if err := u.repo.AddCandidate(id, candidate); err != nil {
-				log.Println("Error adding candidate:", err)
-				return
-			}
-		}
-		
-		// Answerer から送られてきた candidateAdd であれば、
-		// Offerer 側の candidate を送る
-		if u.o.IsOfferID(message.TargetID) {
-			// Offerer から answerer に candidate を送る
-			u.SendCandidate(message)
+	} else {
+		if err := u.repo.AddCandidate(id, candidate); err != nil {
+			log.Println("Error adding candidate:", err)
+			return nil
 		}
 	}
 	
-	func (u *IWebsocketUsecase) SendCandidate(message entity.Message) {
-		returnData := entity.Message{}
-		// 送信元の名義
-		id := u.o.GetOffer()
-	
-		if !u.repo.ExistsCandidateByID(id) {
-			return
-		}
-	
-		answerId := message.ID
-		// クライアントの取得（repo）
-		client, err := u.wm.GetConnectionByID(answerId)
-		if err == nil {
-			log.Println("Client not found:", answerId)
-			return
-		}
-	
-		fmt.Println("candidate受け取り")
-		fmt.Println("[Candidate]")
-		returnData.Type = "candidate"
-	
-		candidate, err := u.repo.GetCandidatesByID(id)
-		if err != nil {
-			log.Println("Candidate not found:", err)
-			return
-		}
-		returnData.Candidate = candidate
-	
-		// 送信
-		client.WriteMessage(returnData)
+	// Answerer から送られてきた candidateAdd であれば、
+	// Offerer 側の candidate を送る
+	if u.o.IsOfferID(message.TargetID) {
+		// Offerer から answerer に candidate を送る
+		return &resultData
 	}
+
+	return nil
+}
+	
+func (u *IWebsocketUsecase) SendCandidate(message entity.Message) {
+	returnData := entity.Message{}
+	// 送信元の名義
+	id := u.o.GetOffer()
+
+	if !u.repo.ExistsCandidateByID(id) {
+		return
+	}
+
+	answerId := message.ID
+	// クライアントの取得（repo）
+	client, err := u.wm.GetConnectionByID(answerId)
+	if err == nil {
+		log.Println("Client not found:", answerId)
+		return
+	}
+
+	fmt.Println("candidate受け取り")
+	fmt.Println("[Candidate]")
+	returnData.Type = "candidate"
+
+	candidate, err := u.repo.GetCandidatesByID(id)
+	if err != nil {
+		log.Println("Candidate not found:", err)
+		return
+	}
+	returnData.Candidate = candidate
+
+	// 送信
+	client.WriteMessage(returnData)
+}
