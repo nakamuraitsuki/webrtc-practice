@@ -12,6 +12,7 @@ package mock_service
 import (
 	reflect "reflect"
 
+	entity "example.com/webrtc-practice/internal/domain/entity"
 	service "example.com/webrtc-practice/internal/domain/service"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -55,11 +56,11 @@ func (mr *MockWebSocketConnectionMockRecorder) Close() *gomock.Call {
 }
 
 // ReadMessage mocks base method.
-func (m *MockWebSocketConnection) ReadMessage() (int, []byte, error) {
+func (m *MockWebSocketConnection) ReadMessage() (int, entity.Message, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReadMessage")
 	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].([]byte)
+	ret1, _ := ret[1].(entity.Message)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -71,7 +72,7 @@ func (mr *MockWebSocketConnectionMockRecorder) ReadMessage() *gomock.Call {
 }
 
 // WriteMessage mocks base method.
-func (m *MockWebSocketConnection) WriteMessage(arg0 []byte) error {
+func (m *MockWebSocketConnection) WriteMessage(arg0 entity.Message) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WriteMessage", arg0)
 	ret0, _ := ret[0].(error)
