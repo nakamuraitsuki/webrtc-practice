@@ -5,7 +5,6 @@ import (
 	"example.com/webrtc-practice/internal/domain/service"
 )
 
-// TODO ： Message型をやり取りするようにする
 type Broadcast struct {
 	broadcast chan entity.Message
 }
