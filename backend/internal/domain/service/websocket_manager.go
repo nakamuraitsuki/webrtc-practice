@@ -1,8 +1,10 @@
 package service
 
+import "example.com/webrtc-practice/internal/domain/entity"
+
 type WebSocketConnection interface {
-	ReadMessage() (int, []byte, error)
-	WriteMessage([]byte) error
+	ReadMessage() (int, entity.Message, error)
+	WriteMessage(entity.Message) error
 	Close() error
 }
 

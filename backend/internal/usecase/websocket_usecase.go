@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 
@@ -50,23 +49,13 @@ func (u *IWebsocketUsecase) ListenForMessages(conn service.WebSocketConnection) 
 			u.repo.DeleteClient(clientID)
 			break
 		}
-		// メッセージ抽出
-		// 文字列 -> json
-		var jsonStr = string(message)
 
-		// json -> map[string]any
-		var data entity.Message
-		err = json.Unmarshal([]byte(jsonStr), &data)
-		if err != nil {
-			log.Println("Error unmarshalling message:", err)
-			continue
-		}
 
 		// 初回ID登録
 		if clientID == "" {
 			// idの取得
-			id := data.ID
-			clientID = data.ID
+			id := message.ID
+			clientID = message.ID
 
 			if u.wm.ExistsByID(id) {
 				// 既に登録されている場合は、今つなごうとしているコネクションを削除
@@ -78,7 +67,7 @@ func (u *IWebsocketUsecase) ListenForMessages(conn service.WebSocketConnection) 
 			u.wm.RegisterID(conn, id)
 			u.repo.CreateClient(id)
 		}
-		u.br.Send(data)
+		u.br.Send(message)
 	}
 	u.o.ClearOffer()
 }
@@ -93,11 +82,11 @@ func (u *IWebsocketUsecase) ProcessMessage() {
 
 		switch msgType {
 		case "connect":
-			u.connect(message)
+			u.Connect(message)
 		case "offer":
-			u.offer(message)
+			u.Offer(message)
 		case "answer":
-			u.answer(message)
+			u.Answer(message)
 		case "candidateAdd":
 			u.candidateAdd(message)
 		default:
@@ -106,7 +95,7 @@ func (u *IWebsocketUsecase) ProcessMessage() {
 	}
 }
 
-func (u *IWebsocketUsecase) connect(message entity.Message) {
+func (u *IWebsocketUsecase) Connect(message entity.Message) {
 	resultData := entity.Message{}
 
 	// メッセージの送り主を取得
@@ -124,14 +113,9 @@ func (u *IWebsocketUsecase) connect(message entity.Message) {
 		u.o.SetOffer(id)
 		// offerをコールバック（送り主がofferを送ることを期待する）
 		resultData.Type = "offer"
-		bytes, err := json.Marshal(resultData)
-		if err != nil {
-			log.Println("Error marshalling message:", err)
-			return
-		}
 
 		// 送信
-		client.WriteMessage(bytes)
+		client.WriteMessage(resultData)
 		return
 	} else if u.o.IsOfferID(id) { // offer中なのが自分だったら
 		// 重複なので何もしない
@@ -148,33 +132,26 @@ func (u *IWebsocketUsecase) connect(message entity.Message) {
 		return
 	}
 	resultData.TargetID = u.o.GetOffer()
-	bytes, err := json.Marshal(resultData)
-	if err != nil {
-		log.Println("Error marshalling message:", err)
-		return
-	}
 
 	// 送信
-	client.WriteMessage(bytes)
+	client.WriteMessage(resultData)
 }
 
-func (u *IWebsocketUsecase) offer(message entity.Message) {
+func (u *IWebsocketUsecase) Offer(message entity.Message) {
 	// offerの送り主のSDPを保存
 	fmt.Println("[Offer]")
-	id := message.ID
-	sdp, _ := json.Marshal(message.SDP)
-	u.repo.SaveSDP(id, string(sdp))
+	u.repo.SaveSDP(message.ID, message.SDP)
 }
 
-func (u *IWebsocketUsecase) answer(message entity.Message) {
+func (u *IWebsocketUsecase) Answer(message entity.Message) {
 	// offerの送り主にanswerを返す
-	u.sendAnswer(message)
+	u.SendAnswer(message)
 
 	// answerの送り主にcandidateを送る
-	u.sendCandidate(message)
+	u.SendCandidate(message)
 }
 
-func (u *IWebsocketUsecase) sendAnswer(message entity.Message) {
+func (u *IWebsocketUsecase) SendAnswer(message entity.Message) {
 	fmt.Println("[Answer]")
 	resultData := entity.Message{}
 	resultData.Type = "answer"
@@ -187,12 +164,10 @@ func (u *IWebsocketUsecase) sendAnswer(message entity.Message) {
 		return
 	}
 
-	bytes, _ := json.Marshal(resultData)
-
-	client.WriteMessage(bytes)
+	client.WriteMessage(resultData)
 }
 
-func (u *IWebsocketUsecase) sendCandidate(message entity.Message) {
+func (u *IWebsocketUsecase) SendCandidate(message entity.Message) {
 	returnData := entity.Message{}
 	id := u.o.GetOffer()
 
@@ -219,10 +194,8 @@ func (u *IWebsocketUsecase) sendCandidate(message entity.Message) {
 	}
 	returnData.Candidate = candidate
 
-	bytes, _ := json.Marshal(returnData)
-
 	// 送信
-	client.WriteMessage(bytes)
+	client.WriteMessage(returnData)
 
 }
 
@@ -241,10 +214,9 @@ func (u *IWebsocketUsecase) candidateAdd(message entity.Message) {
 			fmt.Println("[Candidate]")
 			resultData.Type = "candidate"
 			resultData.Candidate = candidate
-			bytes, _ := json.Marshal(resultData)
 
 			// 送信
-			client.WriteMessage(bytes)
+			client.WriteMessage(resultData)
 			return
 		}
 	}
