@@ -30,11 +30,11 @@ func NewWebsocketHandler(
 }
 
 func (h *WebsocketHandler) Register(g *echo.Group) {
-	g.GET("/", h.HandleWebSocket)
+	g.GET("/", h.HandleWebsocket)
 }
 
 // WebSocket接続
-func (h *WebsocketHandler) HandleWebSocket(c echo.Context) error {
+func (h *WebsocketHandler) HandleWebsocket(c echo.Context) error {
 	// リクエストをコネクションにアップグレード
 	conn, _ := h.Upgrader.Upgrade(c.Response().Writer, c.Request(), nil)
 	defer conn.Close()
