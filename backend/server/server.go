@@ -10,6 +10,7 @@ import (
 	offerservice "example.com/webrtc-practice/internal/infrastructure/service_impl/offer_service"
 	websocketbroadcast "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_broadcast"
 	websocketmanager "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_manager"
+	"example.com/webrtc-practice/internal/usecase"
 	"example.com/webrtc-practice/routes"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
@@ -37,13 +38,13 @@ func ServerStart(cfg *config.Config, db *sqlx.DB) {
 	websocketManager := websocketmanager.NewWebsocketManager()
 	websocketBroadcast := websocketbroadcast.NewBroadcast()
 	websocketOfferService := offerservice.NewOfferService()
-
-	websocketHandler := handler.NewWebsocketHandler(
+	websocketUsecase := usecase.NewWebsocketUsecase(
 		websocketRepository,
 		websocketManager,
 		websocketBroadcast,
 		websocketOfferService,
 	)
+	websocketHandler := handler.NewWebsocketHandler(websocketUsecase)
 
 	routes.SetupRoutes(e, cfg, userHandler, websocketHandler)
 

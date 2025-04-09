@@ -3,8 +3,6 @@ package handler
 import (
 	"net/http"
 
-	"example.com/webrtc-practice/internal/domain/repository"
-	"example.com/webrtc-practice/internal/domain/service"
 	"example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_manager"
 	"example.com/webrtc-practice/internal/usecase"
 	"github.com/gorilla/websocket"
@@ -16,23 +14,11 @@ var (
 )
 
 type WebsocketHandler struct {
-	Usecase *usecase.IWebsocketUsecase
+	Usecase usecase.IWebsocketUsecaseInterface
 }
 
-func NewWebsocketHandler(
-	repo repository.IWebsocketRepository,
-	wm service.WebsocketManager,
-	br service.WebSocketBroadcastService,
-	o service.OfferService,
-) WebsocketHandler {
-	h := WebsocketHandler{
-		Usecase: usecase.NewWebsocketUsecase(
-			repo,
-			wm,
-			br,
-			o,
-		),
-	}
+func NewWebsocketHandler(usecase usecase.IWebsocketUsecaseInterface) WebsocketHandler {
+	h := WebsocketHandler{ Usecase: usecase }
 
 	// WebSocketメッセージ処理のゴルーチンを起動
 	go h.HandleMessages()

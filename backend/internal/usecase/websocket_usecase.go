@@ -9,6 +9,18 @@ import (
 	"example.com/webrtc-practice/internal/domain/service"
 )
 
+type IWebsocketUsecaseInterface interface {
+	RegisterClient(conn service.WebSocketConnection) error
+	ListenForMessages(conn service.WebSocketConnection)
+	ProcessMessage()
+	Connect(message entity.Message)
+	Offer(message entity.Message)
+	Answer(message entity.Message)
+	Candidate(message entity.Message)
+	CandidateAdd(message entity.Message) bool
+	SendCandidate(message entity.Message)
+}
+
 type IWebsocketUsecase struct {
 	repo repository.IWebsocketRepository
 	wm   service.WebsocketManager
