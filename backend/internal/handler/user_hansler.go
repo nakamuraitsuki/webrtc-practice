@@ -14,6 +14,7 @@ type UserHandler struct {
 	UserRepository repository.IUserRepository
 }
 
+// TODO: usecaseを受け取るようにしてより疎結合にする
 func NewUserHandler(
 	repo repository.IUserRepository,
 	hasher service.Hasher,
