@@ -1,0 +1,122 @@
+package websocketmanager_test
+
+import (
+	"encoding/json"
+	"errors"
+	"testing"
+
+	"example.com/webrtc-practice/internal/domain/entity"
+	websocketmanager "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_manager"
+	mock_websocketmanager "example.com/webrtc-practice/mocks/infrastructure/service_impl"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
+)
+
+func TestReadMessage(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockConn := mock_websocketmanager.NewMockRealConnAdopter(ctrl)
+	conn := websocketmanager.NewWebsocketConnection(mockConn)
+
+	t.Run("正常にメッセージを読み込める", func(t *testing.T) {
+		testMsg := entity.Message{
+			ID:        "123",
+			Type:      "connection",
+			SDP:       "sdp",
+			Candidate: []string{"candidate", "candidate2"},
+			TargetID:  "456",
+		}
+		testMsgByte, _ := json.Marshal(testMsg)
+		mockConn.EXPECT().ReadMessageFunc().Return(1, testMsgByte, nil).Times(1)
+
+		// テスト実行
+		msgType, msg, err := conn.ReadMessage()
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, msgType)
+		assert.Equal(t, testMsg.ID, msg.ID)
+		assert.Equal(t, testMsg.Type, msg.Type)
+		assert.Equal(t, testMsg.SDP, msg.SDP)
+		assert.Equal(t, testMsg.Candidate, msg.Candidate)
+		assert.Equal(t, testMsg.TargetID, msg.TargetID)
+	})
+
+	t.Run("ReadMessageFuncがエラーを返す場合", func(t *testing.T) {
+		mockConn.EXPECT().ReadMessageFunc().Return(0, nil, errors.New("read error")).Times(1)
+
+		_, _, err := conn.ReadMessage()
+		assert.Error(t, err)
+	})
+
+	t.Run("不正なJSONを返された場合", func(t *testing.T) {
+		invalidJSON := []byte(`{"invalid": "json"`)
+		mockConn.EXPECT().ReadMessageFunc().Return(1, invalidJSON, nil).Times(1)
+
+		_, _, err := conn.ReadMessage()
+		assert.Error(t, err)
+	})
+}
+
+func TestWriteMessage(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockConn := mock_websocketmanager.NewMockRealConnAdopter(ctrl)
+	conn := websocketmanager.NewWebsocketConnection(mockConn)
+
+	t.Run("正常にメッセージを書き込める", func(t *testing.T) {
+		testMsg := entity.Message{
+			ID:        "123",
+			Type:      "connection",
+			SDP:       "sdp",
+			Candidate: []string{"candidate", "candidate2"},
+			TargetID:  "456",
+		}
+
+		mockConn.EXPECT().WriteMessageFunc(gomock.Any(), gomock.Any()).Do(func(messageType int, data []byte) {
+			msg := entity.Message{}
+			err := json.Unmarshal(data, &msg)
+
+			assert.NoError(t, err)
+			assert.Equal(t, testMsg.ID, msg.ID)
+			assert.Equal(t, testMsg.Type, msg.Type)
+			assert.Equal(t, testMsg.SDP, msg.SDP)
+			assert.Equal(t, testMsg.Candidate, msg.Candidate)
+			assert.Equal(t, testMsg.TargetID, msg.TargetID)
+		}).Return(nil).Times(1)
+
+		err := conn.WriteMessage(testMsg)
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("WriteMessageFuncがエラーを返す場合", func(t *testing.T) {
+		testMsg := entity.Message{}
+
+		mockConn.EXPECT().WriteMessageFunc(gomock.Any(), gomock.Any()).Return(errors.New("write error")).Times(1)
+
+		err := conn.WriteMessage(testMsg)
+		assert.Error(t, err)
+	})
+}
+
+func TestClose(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockConn := mock_websocketmanager.NewMockRealConnAdopter(ctrl)
+	conn := websocketmanager.NewWebsocketConnection(mockConn)
+
+	t.Run("正常にCloseできる", func(t *testing.T) {
+		mockConn.EXPECT().CloseFunc().Return(nil).Times(1)
+		err := conn.Close()
+		assert.NoError(t, err)
+	})
+
+	t.Run("CloseFuncがエラーを返す場合", func(t *testing.T) {
+		mockConn.EXPECT().CloseFunc().Return(errors.New("close error")).Times(1)
+		err := conn.Close()
+		assert.Error(t, err)
+	})
+}
