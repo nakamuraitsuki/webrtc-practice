@@ -50,7 +50,8 @@ func (h *WebsocketHandler) HandleWebSocket(c echo.Context) error {
 	conn, _ := upgrader.Upgrade(c.Response().Writer, c.Request(), nil)
 	defer conn.Close()
 
-	client := websocketmanager.NewWebsocketConnection(conn)
+	connAdopter := websocketmanager.NewRealConnAdopter(conn)
+	client := websocketmanager.NewWebsocketConnection(connAdopter)
 
 	err := h.Usecase.RegisterClient(client)
 	if err != nil {

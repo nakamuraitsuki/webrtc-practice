@@ -9,17 +9,17 @@ import (
 )
 
 type WebSocketConnectionImpl struct {
-	conn *websocket.Conn
+	conn RealConnAdopter
 }
 
-func NewWebsocketConnection(conn *websocket.Conn) service.WebSocketConnection {
+func NewWebsocketConnection(conn RealConnAdopter) service.WebSocketConnection {
 	return &WebSocketConnectionImpl{
 		conn: conn,
 	}
 }
 
 func (w *WebSocketConnectionImpl) ReadMessage() (int, entity.Message, error) {
-	messageType, messagebyte, err := w.conn.ReadMessage()
+	messageType, messagebyte, err := w.conn.ReadMessageFunc()
 	if err != nil {
 		return 0, entity.Message{}, err
 	}
@@ -39,9 +39,9 @@ func (w *WebSocketConnectionImpl) WriteMessage(data entity.Message) error {
 	if err != nil {
 		return err
 	}
-	return w.conn.WriteMessage(websocket.TextMessage, dataByte)
+	return w.conn.WriteMessageFunc(websocket.TextMessage, dataByte)
 }
 
 func (w *WebSocketConnectionImpl) Close() error {
-	return w.conn.Close()
+	return w.conn.CloseFunc()
 }
