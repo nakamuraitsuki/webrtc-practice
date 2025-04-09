@@ -10,7 +10,7 @@ type WebSocketConnection interface {
 
 type WebsocketManager interface {
 	RegisterConnection(conn WebSocketConnection) error
-	RegisterID(conn WebSocketConnection, id string)
+	RegisterID(conn WebSocketConnection, id string) error
 	DeleteConnection(conn WebSocketConnection) error
 	GetConnectionByID(id string) (WebSocketConnection, error)
 	ExistsByID(id string) bool

@@ -36,14 +36,19 @@ func (wm *WebsocketManagerImpl) RegisterConnection(conn service.WebSocketConnect
 	return nil
 }
 
-func (wm *WebsocketManagerImpl) RegisterID(conn service.WebSocketConnection, id string) {
+func (wm *WebsocketManagerImpl) RegisterID(conn service.WebSocketConnection, id string) error {
 	// ミューテーションロックを使用して、同時アクセスを防止
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
+	// コネクションが登録されていない場合
+	if _, exists := wm.clients[conn]; !exists {
+		return errors.New("client not registered")
+	}
 	// ID登録
 	wm.clients[conn] = id
 	wm.clientsByID[id] = conn
+	return nil
 }
 
 func (wm *WebsocketManagerImpl) DeleteConnection(conn service.WebSocketConnection) error {

@@ -76,7 +76,11 @@ func (u *IWebsocketUsecase) ListenForMessages(conn service.WebSocketConnection) 
 				break
 			}
 
-			u.wm.RegisterID(conn, id)
+			err = u.wm.RegisterID(conn, id)
+			if err != nil {
+				log.Println("Failed to register ID:", err)
+				break
+			}
 			u.repo.CreateClient(id)
 		}
 		u.br.Send(message)
