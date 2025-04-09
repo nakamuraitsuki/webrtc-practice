@@ -7,7 +7,7 @@
 //
 
 // Package mock_websocketmanager is a generated GoMock package.
-package mock_websocketmanager
+package mock_service_impl
 
 import (
 	reflect "reflect"
