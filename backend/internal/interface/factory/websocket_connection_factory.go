@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"example.com/webrtc-practice/internal/domain/service"
-	"example.com/webrtc-practice/internal/interface/adopter"
+	"example.com/webrtc-practice/internal/interface/adapter"
 )
 
-type WebsocketConnectionAdopterFactory interface {
-	NewAdopter(conn service.WebSocketConnection) adopter.ConnAdopter
+type WebsocketConnectionAdapterFactory interface {
+	NewAdapter(conn service.WebSocketConnection) adapter.ConnAdapter
 }
 
 type WebsocketConnectionFactory interface {

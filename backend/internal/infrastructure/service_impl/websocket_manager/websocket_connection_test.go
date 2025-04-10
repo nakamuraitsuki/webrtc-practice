@@ -7,7 +7,7 @@ import (
 
 	"example.com/webrtc-practice/internal/domain/entity"
 	websocketmanager "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_manager"
-	mock_websocketmanager "example.com/webrtc-practice/mocks/infrastructure/service_impl"
+	mock_adapter "example.com/webrtc-practice/mocks/interface/adapter"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -16,7 +16,7 @@ func TestReadMessage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockConn := mock_websocketmanager.NewMockRealConnAdopter(ctrl)
+	mockConn := mock_adapter.NewMockConnAdapter(ctrl)
 	conn := websocketmanager.NewWebsocketConnection(mockConn)
 
 	t.Run("正常にメッセージを読み込める", func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestWriteMessage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockConn := mock_websocketmanager.NewMockRealConnAdopter(ctrl)
+	mockConn := mock_adapter.NewMockConnAdapter(ctrl)
 	conn := websocketmanager.NewWebsocketConnection(mockConn)
 
 	t.Run("正常にメッセージを書き込める", func(t *testing.T) {
@@ -105,7 +105,7 @@ func TestClose(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockConn := mock_websocketmanager.NewMockRealConnAdopter(ctrl)
+	mockConn := mock_adapter.NewMockConnAdapter(ctrl)
 	conn := websocketmanager.NewWebsocketConnection(mockConn)
 
 	t.Run("正常にCloseできる", func(t *testing.T) {

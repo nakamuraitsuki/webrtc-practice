@@ -1,6 +1,6 @@
-package adopter
+package adapter
 
-type ConnAdopter interface {
+type ConnAdapter interface {
 	ReadMessageFunc() (int, []byte, error)
 	WriteMessageFunc(int, []byte) error
 	CloseFunc() error
