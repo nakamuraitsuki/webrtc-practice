@@ -1,6 +1,8 @@
 package handler_test
 
 import (
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -8,6 +10,7 @@ import (
 	mock_factory "example.com/webrtc-practice/mocks/interface/factory"
 	mock_service "example.com/webrtc-practice/mocks/service"
 	mock_usecase "example.com/webrtc-practice/mocks/usecase"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -39,6 +42,8 @@ func TestHandleWebsocket(t *testing.T) {
 	mockUsecase := mock_usecase.NewMockIWebsocketUsecaseInterface(ctrl)
 	mockFactory := mock_factory.NewMockWebsocketConnectionFactory(ctrl)
 
+	dummyContext, _ := createTestContext(echo.GET, "/ws", "")
+
 	wsHandler := handler.NewWebsocketHandler(mockUsecase, mockFactory)
 
 	// NewWebsocketHandler呼び出し時のゴルーチンの実行を待つ
@@ -57,10 +62,28 @@ func TestHandleWebsocket(t *testing.T) {
 	// ListenForMessagesが1回呼ばれることを期待
 	mockUsecase.EXPECT().ListenForMessages(mockConn).Times(1)
 
+	mockConn.EXPECT().Close().Times(1)
+
 	// HandleWebsocketメソッドをテスト
-	err := wsHandler.HandleWebsocket(nil)
+	err := wsHandler.HandleWebsocket(dummyContext)
 	assert.NoError(t, err)
 
 	// goroutineの実行を少し待つ
 	time.Sleep(10 * time.Millisecond)
+}
+
+func createTestContext(method, path, body string) (echo.Context, *httptest.ResponseRecorder) {
+	e := echo.New()
+
+	// リクエスト作成
+	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	// レスポンス記録用
+	rec := httptest.NewRecorder()
+
+	// Context生成
+	c := e.NewContext(req, rec)
+
+	return c, rec
 }
