@@ -3,24 +3,23 @@ package handler
 import (
 	"net/http"
 
-	websocketmanager "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_manager"
-	websocketupgrader "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_upgrader"
+	"example.com/webrtc-practice/internal/interface/factory"
 	"example.com/webrtc-practice/internal/usecase"
 	"github.com/labstack/echo/v4"
 )
 
 type WebsocketHandler struct {
-	Usecase  usecase.IWebsocketUsecaseInterface
-	Upgrader websocketupgrader.WebsocketUpgraderInterface
+	Usecase                    usecase.IWebsocketUsecaseInterface
+	WebsocketConnectionFactory factory.WebsocketConnectionFactory
 }
 
 func NewWebsocketHandler(
 	usecase usecase.IWebsocketUsecaseInterface,
-	upgrader websocketupgrader.WebsocketUpgraderInterface,
+	factory factory.WebsocketConnectionFactory,
 ) WebsocketHandler {
 	h := WebsocketHandler{
-		Usecase:  usecase,
-		Upgrader: upgrader,
+		Usecase:                    usecase,
+		WebsocketConnectionFactory: factory,
 	}
 
 	// WebSocketメッセージ処理のゴルーチンを起動
@@ -36,18 +35,18 @@ func (h *WebsocketHandler) Register(g *echo.Group) {
 // WebSocket接続
 func (h *WebsocketHandler) HandleWebsocket(c echo.Context) error {
 	// リクエストをコネクションにアップグレード
-	conn, _ := h.Upgrader.Upgrade(c.Response().Writer, c.Request(), nil)
+	conn, err := h.WebsocketConnectionFactory.NewConnection(c.Response().Writer, c.Request())
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to upgrade connection"})
+	}
 	defer conn.Close()
 
-	connAdopter := websocketmanager.NewRealConnAdopter(conn)
-	client := websocketmanager.NewWebsocketConnection(connAdopter)
-
-	err := h.Usecase.RegisterClient(client)
+	err = h.Usecase.RegisterClient(conn)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "client already registered"})
 	}
 
-	go h.Usecase.ListenForMessages(client)
+	go h.Usecase.ListenForMessages(conn)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "success"})
 }

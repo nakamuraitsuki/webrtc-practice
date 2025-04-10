@@ -3,6 +3,7 @@ package server
 import (
 	"example.com/webrtc-practice/config"
 	"example.com/webrtc-practice/internal/handler"
+	"example.com/webrtc-practice/internal/infrastructure/factory_impl"
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl/sqlite3"
 	"example.com/webrtc-practice/internal/infrastructure/service_impl/hasher"
@@ -46,7 +47,8 @@ func ServerStart(cfg *config.Config, db *sqlx.DB) {
 		websocketOfferService,
 	)
 	websocketUpgrader := websocketupgrader.NewWebsocketUpgrader()
-	websocketHandler := handler.NewWebsocketHandler(websocketUsecase, websocketUpgrader)
+	websocketConnectionFactory := factory_impl.NewWebsocketConnectionFactoryImpl(websocketUpgrader)
+	websocketHandler := handler.NewWebsocketHandler(websocketUsecase, websocketConnectionFactory)
 
 	routes.SetupRoutes(e, cfg, userHandler, websocketHandler)
 

@@ -5,14 +5,15 @@ import (
 
 	"example.com/webrtc-practice/internal/domain/entity"
 	"example.com/webrtc-practice/internal/domain/service"
+	"example.com/webrtc-practice/internal/interface/adopter"
 	"github.com/gorilla/websocket"
 )
 
 type WebSocketConnectionImpl struct {
-	conn RealConnAdopter
+	conn adopter.ConnAdopter
 }
 
-func NewWebsocketConnection(conn RealConnAdopter) service.WebSocketConnection {
+func NewWebsocketConnection(conn adopter.ConnAdopter) service.WebSocketConnection {
 	return &WebSocketConnectionImpl{
 		conn: conn,
 	}
