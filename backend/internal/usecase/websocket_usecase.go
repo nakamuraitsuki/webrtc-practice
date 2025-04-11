@@ -114,6 +114,7 @@ func (u *IWebsocketUsecase) ProcessMessage() {
 func (u *IWebsocketUsecase) Connect(message entity.Message) {
 	// メッセージの送り主を取得
 	id := message.ID
+	fmt.Println("[Connect]:", id)
 	// IDからクライアントを取得(repo)
 	client, err := u.wm.GetConnectionByID(id)
 	if err != nil {
@@ -141,6 +142,7 @@ func (u *IWebsocketUsecase) Connect(message entity.Message) {
 	// もし自分以外のofferしている人がいたら。
 
 	// anser待機中の人が送ったofferを整形（offerを受け取った相手がanswerを送ることを期待する）
+	// TODO: offerを始めて受け取った人がフィードバックを受け取ってsdp登録するまでは他の人のconnectを待った方がいい
 	sdp, err := u.repo.GetSDPByID(u.o.GetOffer())
 	if err != nil {
 		log.Println("SDP not found:", err)
@@ -149,10 +151,10 @@ func (u *IWebsocketUsecase) Connect(message entity.Message) {
 	targetID := u.o.GetOffer()
 
 	resultData := entity.Message{
-		ID:       id,
+		ID:       targetID,
 		Type:     "offer",
 		SDP:      sdp,
-		TargetID: targetID,
+		TargetID: id,
 	}
 	// 送信
 	client.WriteMessage(resultData)

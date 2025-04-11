@@ -46,7 +46,7 @@ func (h *WebsocketHandler) HandleWebsocket(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "client already registered"})
 	}
 
-	go h.Usecase.ListenForMessages(conn)
+	h.Usecase.ListenForMessages(conn)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "success"})
 }
