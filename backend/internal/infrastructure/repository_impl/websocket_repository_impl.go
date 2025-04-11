@@ -92,6 +92,7 @@ func (wr *WebsocketRepositoryImpl) AddCandidate(id string, candidate []string) e
 
 	client, exists := wr.clientData[id]
 	if !exists {
+		return errors.New("client not found")
 	}
 
 	client.Candidate = append(client.Candidate, candidate...)
