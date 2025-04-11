@@ -91,8 +91,7 @@ func (wr *WebsocketRepositoryImpl) AddCandidate(id string, candidate []string) e
 	defer wr.mu.Unlock()
 
 	client, exists := wr.clientData[id]
-	if !exists || client.Candidate == nil {
-		return errors.New("candidates not found")
+	if !exists {
 	}
 
 	client.Candidate = append(client.Candidate, candidate...)
