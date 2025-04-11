@@ -2,7 +2,7 @@ package  main
 
 import (
 	"log"
-	"example.com/webrtc-practice/internal/infrastructure/repository/sqlite3"
+	"example.com/webrtc-practice/internal/infrastructure/repository_impl/sqlite3"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"

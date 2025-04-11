@@ -12,7 +12,11 @@ type IUserUsecase struct {
 	tokenService service.TokenService
 }
 
-func NewUserUsecase(repo repository.IUserRepository, hasher service.Hasher, tokenService service.TokenService) *IUserUsecase {
+func NewUserUsecase(
+	repo repository.IUserRepository,
+	hasher service.Hasher,
+	tokenService service.TokenService,
+) *IUserUsecase {
 	return &IUserUsecase{
 		repo:         repo,
 		hasher:       hasher,
