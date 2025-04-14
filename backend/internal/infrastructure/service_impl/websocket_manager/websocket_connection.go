@@ -5,6 +5,7 @@ import (
 
 	"example.com/webrtc-practice/internal/domain/entity"
 	"example.com/webrtc-practice/internal/domain/service"
+	"example.com/webrtc-practice/internal/infrastructure/dto"
 	"example.com/webrtc-practice/internal/interface/adapter"
 	"github.com/gorilla/websocket"
 )
@@ -25,18 +26,20 @@ func (w *WebSocketConnectionImpl) ReadMessage() (int, entity.Message, error) {
 		return 0, entity.Message{}, err
 	}
 
-	var message entity.Message
+	var message dto.WebsocketMessageDTO
 	err = json.Unmarshal(messagebyte, &message)
 	if err != nil {
 		return 0, entity.Message{}, err
 	}
 	
-
-	return messageType, message, nil
+	messageEntity := message.ToEntity()
+	return messageType, *messageEntity, nil
 }
 
 func (w *WebSocketConnectionImpl) WriteMessage(data entity.Message) error {
-	dataByte, err := json.Marshal(data)
+	dataDTO := dto.WebsocketMessageDTO{}
+	dataDTO.FromEntity(&data)
+	dataByte, err := json.Marshal(dataDTO)
 	if err != nil {
 		return err
 	}

@@ -14,12 +14,7 @@ func TestBroadcast(t *testing.T) {
 	b := websocketbroadcast.NewBroadcast()
 
 	t.Run("Send and Receive Message", func(t *testing.T) {
-		expected := entity.Message{
-			ID:        "user1",
-			Type:      "candidate",
-			Candidate: []string{"cand1"},
-		}
-
+		expected := *entity.NewMessage("123", "connection", "sdp", []string{"candidate", "candidate2"}, "456")
 		// チャネルがブロックしないように別ゴルーチンで受信
 		go func() {
 			b.Send(expected)
