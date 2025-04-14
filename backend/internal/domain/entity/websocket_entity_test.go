@@ -33,14 +33,30 @@ func TestMessage_Setters(t *testing.T) {
 	assert.Equal(t, "new_target", message.GetTargetID())
 }
 
-func TestNewWebsocketClient(t *testing.T) {
+func TestWebsocketClient_Getters(t *testing.T) {
 	id := "user123"
 	sdp := "sdp data"
 	candidate := []string{"candidate1", "candidate2"}
 
 	client := entity.NewWebsocketClient(id, sdp, candidate)
 
-	assert.Equal(t, id, client.ID)
-	assert.Equal(t, sdp, client.SDP)
-	assert.Equal(t, candidate, client.Candidate)
+	assert.Equal(t, id, client.GetID())
+	assert.Equal(t, sdp, client.GetSDP())
+	assert.Equal(t, candidate, client.GetCandidate())
+}
+
+func TestWebsocketClient_Setters(t *testing.T) {
+	id := "user123"
+	sdp := "sdp data"
+	candidate := []string{"candidate1", "candidate2"}
+
+	client := entity.NewWebsocketClient(id, sdp, candidate)
+
+	client.SetID("new_user")
+	client.SetSDP("new_sdp")
+	client.SetCandidate([]string{"new_candidate"})
+
+	assert.Equal(t, "new_user", client.GetID())
+	assert.Equal(t, "new_sdp", client.GetSDP())
+	assert.Equal(t, []string{"new_candidate"}, client.GetCandidate())
 }
