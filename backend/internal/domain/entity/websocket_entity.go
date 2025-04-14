@@ -1,17 +1,17 @@
 package entity
 
 type Message struct {
-	id        string    // ユーザーIDを期待する
-	msgType   string   
-	sdp       string   
-	candidate []string 
-	targetID  string   
+	id        string // ユーザーIDを期待する
+	msgType   string
+	sdp       string
+	candidate []string
+	targetID  string
 }
 
 type WebsocketClient struct {
-	ID        string   `json:"id"`
-	SDP       string   `json:"sdp"`
-	Candidate []string `json:"candidate"`
+	id        string   
+	sdp       string   
+	candidate []string 
 }
 
 func NewMessage(id string, messageType string, sdp string, candidate []string, targetID string) *Message {
@@ -66,8 +66,32 @@ func (m *Message) SetTargetID(targetID string) {
 
 func NewWebsocketClient(id, sdp string, candidate []string) *WebsocketClient {
 	return &WebsocketClient{
-		ID:        id,
-		SDP:       sdp,
-		Candidate: candidate,
+		id:        id,
+		sdp:       sdp,
+		candidate: candidate,
 	}
+}
+
+func (w *WebsocketClient) GetID() string {
+	return w.id
+}
+
+func (w *WebsocketClient) GetSDP() string {
+	return w.sdp
+}
+
+func (w *WebsocketClient) GetCandidate() []string {
+	return w.candidate
+}
+
+func (w *WebsocketClient) SetID(id string) {
+	w.id = id
+}
+
+func (w *WebsocketClient) SetSDP(sdp string) {
+	w.sdp = sdp
+}
+
+func (w *WebsocketClient) SetCandidate(candidate []string) {
+	w.candidate = candidate
 }
