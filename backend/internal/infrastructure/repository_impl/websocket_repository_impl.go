@@ -54,7 +54,7 @@ func (wr *WebsocketRepositoryImpl) SaveSDP(id string, sdp string) error {
 	if !exists {
 		return errors.New("client not found")
 	}
-	client.SDP = sdp
+	client.SetSDP(sdp)
 
 	return nil
 }
@@ -65,10 +65,10 @@ func (wr *WebsocketRepositoryImpl) GetSDPByID(id string) (string, error) {
 	defer wr.mu.Unlock()
 
 	client, exists := wr.clientData[id]
-	if !exists || client.SDP == "" {
+	if !exists || client.GetSDP() == "" {
 		return "", errors.New("SDP not found")
 	}
-	return client.SDP, nil
+	return client.GetSDP(), nil
 }
 
 func (wr *WebsocketRepositoryImpl) SaveCandidate(id string, candidate []string) error {
@@ -80,7 +80,7 @@ func (wr *WebsocketRepositoryImpl) SaveCandidate(id string, candidate []string) 
 	if !exists {
 		return errors.New("client not found")
 	}
-	client.Candidate = append(client.Candidate, candidate...)
+	client.SetCandidate(append(client.GetCandidate(), candidate...))
 	
 	return nil
 }
@@ -94,8 +94,7 @@ func (wr *WebsocketRepositoryImpl) AddCandidate(id string, candidate []string) e
 	if !exists {
 		return errors.New("client not found")
 	}
-
-	client.Candidate = append(client.Candidate, candidate...)
+	client.SetCandidate(append(client.GetCandidate(), candidate...))
 	return nil
 }
 
@@ -108,7 +107,7 @@ func (wr *WebsocketRepositoryImpl) GetCandidatesByID(id string) ([]string, error
 	if !exists {
 		return nil, errors.New("candidates not found")
 	}
-	return client.Candidate, nil
+	return client.GetCandidate(), nil
 }
 
 func (wr *WebsocketRepositoryImpl) ExistsCandidateByID(id string) bool {
@@ -118,5 +117,5 @@ func (wr *WebsocketRepositoryImpl) ExistsCandidateByID(id string) bool {
 
 	client, exists := wr.clientData[id]
 	// existsを先に調べ、nullポインタへのアクセスを防ぐ
-	return exists && client.Candidate != nil
+	return exists && client.GetCandidate() != nil
 }
