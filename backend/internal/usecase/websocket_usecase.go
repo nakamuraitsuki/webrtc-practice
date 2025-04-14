@@ -190,7 +190,6 @@ func (u *IWebsocketUsecase) Candidate(message entity.Message) {
 // 別途送信の必要がある場合のみtrueを返し、sendCandidateを呼ぶ
 func (u *IWebsocketUsecase) CandidateAdd(message entity.Message) bool {
 	fmt.Println("[Candidate Add]")
-	resultData := entity.NewMessage("", "candidate", "", nil, "")
 	
 	id := message.GetID()
 	candidate := message.GetCandidate()
@@ -200,8 +199,7 @@ func (u *IWebsocketUsecase) CandidateAdd(message entity.Message) bool {
 	if targetID != "" {
 		if client, err := u.wm.GetConnectionByID(targetID); err == nil {
 			fmt.Println("[Candidate]")
-			resultData.SetID(id)
-			resultData.SetCandidate(candidate)
+			resultData := entity.NewMessage(id, "candidate", "", candidate, "")
 			// 送信(Messageの実体を引数に取る)
 			client.WriteMessage(*resultData)
 		}
