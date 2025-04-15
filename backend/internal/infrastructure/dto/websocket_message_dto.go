@@ -11,13 +11,14 @@ type WebsocketMessageDTO struct {
 }
 
 func (w *WebsocketMessageDTO) ToEntity() *entity.Message {
-	return entity.NewMessage(
+	res, _ := entity.NewMessage(
 		w.ID,
 		w.Type,
 		w.SDP,
 		w.Candidate,
 		w.TargetID,
 	)
+	return res
 }
 
 func (w *WebsocketMessageDTO) FromEntity(msg *entity.Message) {

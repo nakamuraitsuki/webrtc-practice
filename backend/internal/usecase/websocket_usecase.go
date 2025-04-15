@@ -128,9 +128,13 @@ func (u *IWebsocketUsecase) Connect(message entity.Message) {
 		u.o.SetOffer(id)
 		// offerをコールバック（送り主がofferを送ることを期待する）
 		// Message型
-		resultData := *entity.NewMessage(id, "offer", "", nil, "")
+		resultData, err := entity.NewMessage(id, "offer", "", nil, "")
+		if err != nil {
+			log.Println("Error creating message:", err)
+			return
+		}
 		// 送信（Messageの実体を引数に取る）
-		client.WriteMessage(resultData)
+		client.WriteMessage(*resultData)
 		return
 	} else if u.o.IsOfferID(id) { // offer中なのが自分だったら
 		// 重複なので何もしない
@@ -148,9 +152,13 @@ func (u *IWebsocketUsecase) Connect(message entity.Message) {
 	}
 	targetID := u.o.GetOffer()
 
-	resultData := *entity.NewMessage(targetID, "offer", sdp, nil, id)
+	resultData, err := entity.NewMessage(targetID, "offer", sdp, nil, id)
+	if err != nil {
+		log.Println("Error creating message:", err)
+		return
+	}
 	// 送信
-	client.WriteMessage(resultData)
+	client.WriteMessage(*resultData)
 }
 
 func (u *IWebsocketUsecase) Offer(message entity.Message) {
@@ -173,9 +181,13 @@ func (u *IWebsocketUsecase) Answer(message entity.Message) {
 		return
 	}
 
-	resultData := *entity.NewMessage(targetID, "answer", sdp, nil, id)
-
-	client.WriteMessage(resultData)
+	resultData, err := entity.NewMessage(targetID, "answer", sdp, nil, id)
+	if err != nil {
+		log.Println("Error creating message:", err)
+		return
+	}
+	// 送信（Messageの実体を引数に取る）
+	client.WriteMessage(*resultData)
 }
 
 func (u *IWebsocketUsecase) Candidate(message entity.Message) {
@@ -199,7 +211,11 @@ func (u *IWebsocketUsecase) CandidateAdd(message entity.Message) bool {
 	if targetID != "" {
 		if client, err := u.wm.GetConnectionByID(targetID); err == nil {
 			fmt.Println("[Candidate]")
-			resultData := entity.NewMessage(id, "candidate", "", candidate, "")
+			resultData, err := entity.NewMessage(id, "candidate", "", candidate, "")
+			if err != nil {
+				log.Println("Error creating message:", err)
+				return false
+			}
 			// 送信(Messageの実体を引数に取る)
 			client.WriteMessage(*resultData)
 		}
@@ -229,7 +245,11 @@ func (u *IWebsocketUsecase) CandidateAdd(message entity.Message) bool {
 }
 	
 func (u *IWebsocketUsecase) SendCandidate(message entity.Message) {
-	returnData := entity.NewMessage("", "candidate", "", nil, "")
+	returnData, err := entity.NewMessage("", "candidate", "", nil, "")
+	if err != nil {
+		log.Println("Error creating message:", err)
+		return
+	}
 	// 送信元の名義
 	id := u.o.GetOffer()
 
