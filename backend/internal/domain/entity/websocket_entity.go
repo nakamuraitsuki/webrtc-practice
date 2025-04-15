@@ -5,7 +5,7 @@ import "fmt"
 const (
 	// msgTypeの定義
 	MESSAGE_TYPE_CONNECT   = "connect"
-	MESSAGE_TYPE_OFFLINE   = "offline"
+	MESSAGE_TYPE_OFFER     = "offer"
 	MESSAGE_TYPE_SDP       = "sdp"
 	MESSAGE_TYPE_CANDIDATE = "candidate"
 )
@@ -29,7 +29,7 @@ type WebsocketClient struct {
 func NewMessageType(messageType string) (MessageType, error) {
 	mt := MessageType(messageType)
 	switch mt {
-	case MESSAGE_TYPE_CONNECT, MESSAGE_TYPE_OFFLINE, MESSAGE_TYPE_SDP, MESSAGE_TYPE_CANDIDATE:
+	case MESSAGE_TYPE_CONNECT, MESSAGE_TYPE_OFFER, MESSAGE_TYPE_SDP, MESSAGE_TYPE_CANDIDATE:
 		return mt, nil
 	default:
 		return "", fmt.Errorf("invalid message type: %s", messageType)
@@ -69,14 +69,6 @@ func (m Message) GetCandidate() []string {
 
 func (m Message) GetTargetID() string {
 	return m.targetID
-}
-
-func (m *Message) SetID(id string) {
-	m.id = id
-}
-
-func (m *Message) SetType(messageType string) {
-	m.msgType = messageType
 }
 
 func (m *Message) SetSDP(sdp string) {

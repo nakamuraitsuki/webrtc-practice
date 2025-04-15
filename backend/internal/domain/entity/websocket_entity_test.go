@@ -18,16 +18,15 @@ func TestMessage_Getters(t *testing.T) {
 }
 
 func TestMessage_Setters(t *testing.T) {
-	message := entity.NewMessage("id", "type", "sdp", []string{"c1"}, "target")
+	message, err := entity.NewMessage("id", "offer", "sdp", []string{"c1"}, "target")
+	if err != nil {
+		t.Fatalf("failed to create message: %v", err)
+	}
 
-	message.SetID("new_id")
-	message.SetType("new_type")
 	message.SetSDP("new_sdp")
 	message.SetCandidate([]string{"new_c1"})
 	message.SetTargetID("new_target")
 
-	assert.Equal(t, "new_id", message.GetID())
-	assert.Equal(t, "new_type", message.GetType())
 	assert.Equal(t, "new_sdp", message.GetSDP())
 	assert.Equal(t, []string{"new_c1"}, message.GetCandidate())
 	assert.Equal(t, "new_target", message.GetTargetID())
