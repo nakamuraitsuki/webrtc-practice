@@ -44,6 +44,18 @@ func (m Message) GetTargetID() string {
 	return m.targetID
 }
 
+func (m *Message) SetID(id string) {
+	m.id = id
+}
+
+func (m *Message) SetType(messageType string) {
+	m.msgType = messageType
+}
+
+func (m *Message) SetSDP(sdp string) {
+	m.sdp = sdp
+}
+
 func (m *Message) SetCandidate(candidate []string) {
 	m.candidate = candidate
 }
@@ -70,6 +82,10 @@ func (w *WebsocketClient) GetSDP() string {
 
 func (w *WebsocketClient) GetCandidate() []string {
 	return w.candidate
+}
+
+func (w *WebsocketClient) SetID(id string) {
+	w.id = id
 }
 
 func (w *WebsocketClient) SetSDP(sdp string) {
