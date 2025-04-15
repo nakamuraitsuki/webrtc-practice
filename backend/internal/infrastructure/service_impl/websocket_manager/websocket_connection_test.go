@@ -21,7 +21,7 @@ func TestReadMessage(t *testing.T) {
 	conn := websocketmanager.NewWebsocketConnection(mockConn)
 
 	t.Run("正常にメッセージを読み込める", func(t *testing.T) {
-		testMsg := entity.NewMessage("123", "connection", "sdp", []string{"candidate", "candidate2"}, "456")
+		testMsg, _ := entity.NewMessage("123", "connection", "sdp", []string{"candidate", "candidate2"}, "456")
 		testMsgDto := dto.WebsocketMessageDTO{}
 		testMsgDto.FromEntity(testMsg)
 		response, _ := json.Marshal(&testMsgDto)
@@ -63,7 +63,7 @@ func TestWriteMessage(t *testing.T) {
 	conn := websocketmanager.NewWebsocketConnection(mockConn)
 
 	t.Run("正常にメッセージを書き込める", func(t *testing.T) {
-		testMsg := entity.NewMessage("123", "connection", "sdp", []string{"candidate", "candidate2"}, "456")
+		testMsg, _ := entity.NewMessage("123", "connection", "sdp", []string{"candidate", "candidate2"}, "456")
 
 		mockConn.EXPECT().WriteMessageFunc(gomock.Any(), gomock.Any()).Do(func(messageType int, data []byte) {
 			msg := dto.WebsocketMessageDTO{}
@@ -83,7 +83,7 @@ func TestWriteMessage(t *testing.T) {
 	})
 
 	t.Run("WriteMessageFuncがエラーを返す場合", func(t *testing.T) {
-		testMsg := entity.NewMessage("", "", "", nil, "")
+		testMsg, _ := entity.NewMessage("", "", "", nil, "")
 
 		mockConn.EXPECT().WriteMessageFunc(gomock.Any(), gomock.Any()).Return(errors.New("write error")).Times(1)
 

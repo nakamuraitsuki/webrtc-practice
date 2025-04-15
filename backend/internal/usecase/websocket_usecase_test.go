@@ -65,7 +65,7 @@ func TestListenForMessages(t *testing.T) {
 
 	mockConn := mock_service.NewMockWebSocketConnection(ctrl)
 
-	testMessage := entity.NewMessage("testID", "connect", "testSDP", []string{"testCandidate"}, "targetID")
+	testMessage, _ := entity.NewMessage("testID", "connect", "testSDP", []string{"testCandidate"}, "targetID")
 
 	t.Run("正常系", func(t *testing.T) {
 		mockConn.EXPECT().
@@ -234,10 +234,10 @@ func TestConnect(t *testing.T) {
 
 	usecase := usecase.NewWebsocketUsecase(mockRepo, mockWm, mockBr, mockO)
 
-	testConnectMessage := entity.NewMessage("testID", "connect", "", nil, "")
+	testConnectMessage, _ := entity.NewMessage("testID", "connect", "", nil, "")
 
 	t.Run("誰もOfferしていない場合、接続者にoffer要求を送る", func(t *testing.T) {
-		msgToSend := entity.NewMessage(testConnectMessage.GetID(), "offer", "", nil, "")
+		msgToSend, _ := entity.NewMessage(testConnectMessage.GetID(), "offer", "", nil, "")
 
 		// 期待される動作
 		mockWm.EXPECT().
@@ -278,7 +278,7 @@ func TestConnect(t *testing.T) {
 	})
 
 	t.Run("offerが他の人だった場合、offerを送信", func(t *testing.T) {
-		msgToSend := entity.NewMessage("otherID", "offer", "otherSDP", nil, testConnectMessage.GetID())
+		msgToSend, _ := entity.NewMessage("otherID", "offer", "otherSDP", nil, testConnectMessage.GetID())
 
 		mockWm.EXPECT().
 			GetConnectionByID(testConnectMessage.GetID()).
@@ -330,7 +330,7 @@ func TestOffer(t *testing.T) {
 
 	usecase := usecase.NewWebsocketUsecase(mockRepo, mockWm, mockBr, mockO)
 
-	testOfferMessage := entity.NewMessage("testID", "offer", "testSDP", nil, "")
+	testOfferMessage, _ := entity.NewMessage("testID", "offer", "testSDP", nil, "")
 
 	t.Run("SDPが正常に保存されること", func(t *testing.T) {
 		mockRepo.EXPECT().
@@ -352,10 +352,10 @@ func TestSendAnswer(t *testing.T) {
 
 	mockConn := mock_service.NewMockWebSocketConnection(ctrl)
 	usecase := usecase.NewWebsocketUsecase(mockRepo, mockWm, mockBr, mockO)
-	testMessage := entity.NewMessage("senderID", "answer", "testSDP", nil, "receiverID")
+	testMessage, _ := entity.NewMessage("senderID", "answer", "testSDP", nil, "receiverID")
 
 	t.Run("正常系", func(t *testing.T) {
-		msgToSend := entity.NewMessage(
+		msgToSend, _ := entity.NewMessage(
 			testMessage.GetTargetID(),
 			"answer",
 			testMessage.GetSDP(),
@@ -398,14 +398,14 @@ func TestCandidateAdd(t *testing.T) {
 
 	t.Run("直接通信＋Candidateを返答", func(t *testing.T) {
 		// テストで使用するメッセージを作成
-		testMessage := entity.NewMessage(
+		testMessage, _ := entity.NewMessage(
 			"senderID",
 			"candidate",
 			"",
 			[]string{"testCandidate1", "testCandidate2"},
 			"receiverID",
 		)
-		msgToSend := entity.NewMessage(
+		msgToSend, _ := entity.NewMessage(
 			testMessage.GetID(),
 			"candidate",
 			"",
@@ -452,7 +452,7 @@ func TestCandidateAdd(t *testing.T) {
 
 	t.Run("候補者が保存されていない場合（保存処理）", func(t *testing.T) {
 		// テストで使用するメッセージを作成
-		testMessage := entity.NewMessage(
+		testMessage, _ := entity.NewMessage(
 			"senderID",
 			"candidate",
 			"",
@@ -487,7 +487,7 @@ func TestCandidateAdd(t *testing.T) {
 
 	t.Run("候補者の保存でエラーが発生した場合", func(t *testing.T) {
 		// テストで使用するメッセージを作成
-		testMessage := entity.NewMessage(
+		testMessage, _ := entity.NewMessage(
 			"senderID",
 			"candidate",
 			"",
@@ -526,7 +526,7 @@ func TestSendCandidate(t *testing.T) {
 
 	usecase := usecase.NewWebsocketUsecase(mockRepo, mockWm, mockBr, mockO)
 
-	testMessage := entity.NewMessage(
+	testMessage, _ := entity.NewMessage(
 		"senderID",
 		"candidate",
 		"",
@@ -538,7 +538,7 @@ func TestSendCandidate(t *testing.T) {
 	mockConn := mock_service.NewMockWebSocketConnection(ctrl)
 
 	t.Run("正常系", func(t *testing.T) {
-		msgToSend := entity.NewMessage(
+		msgToSend, _ := entity.NewMessage(
 			testMessage.GetID(),
 			"candidate",
 			"",

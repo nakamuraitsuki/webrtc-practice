@@ -8,10 +8,10 @@ import (
 )
 
 func TestMessage_Getters(t *testing.T) {
-	message := entity.NewMessage("id", "type", "sdp", []string{"c1"}, "target")
+	message, _ := entity.NewMessage("id", "connect", "sdp", []string{"c1"}, "target")
 
 	assert.Equal(t, "id", message.GetID())
-	assert.Equal(t, "type", message.GetType())
+	assert.Equal(t, "connect", message.GetType())
 	assert.Equal(t, "sdp", message.GetSDP())
 	assert.Equal(t, []string{"c1"}, message.GetCandidate())
 	assert.Equal(t, "target", message.GetTargetID())
