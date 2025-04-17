@@ -2,7 +2,6 @@ package server
 
 import (
 	"example.com/webrtc-practice/config"
-	"example.com/webrtc-practice/internal/handler"
 	"example.com/webrtc-practice/internal/infrastructure/factory_impl"
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl/sqlite3"
@@ -12,6 +11,7 @@ import (
 	websocketbroadcast "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_broadcast"
 	websocketmanager "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_manager"
 	websocketupgrader "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_upgrader"
+	"example.com/webrtc-practice/internal/interface/handler"
 	"example.com/webrtc-practice/internal/usecase"
 	"example.com/webrtc-practice/routes"
 	"github.com/jmoiron/sqlx"

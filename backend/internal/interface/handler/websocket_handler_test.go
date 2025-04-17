@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"example.com/webrtc-practice/internal/handler"
+	"example.com/webrtc-practice/internal/interface/handler"
 	mock_factory "example.com/webrtc-practice/mocks/interface/factory"
 	mock_service "example.com/webrtc-practice/mocks/service"
 	mock_usecase "example.com/webrtc-practice/mocks/usecase"

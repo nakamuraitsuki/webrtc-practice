@@ -18,10 +18,9 @@ func TestMessage_Getters(t *testing.T) {
 }
 
 func TestMessage_Setters(t *testing.T) {
-	message := entity.NewMessage("id", "type", "sdp", []string{"c1"}, "target")
+	message, _ := entity.NewMessage("id", "type", "sdp", []string{"c1"}, "target")
 
 	message.SetID("new_id")
-	message.SetType("new_type")
 	message.SetSDP("new_sdp")
 	message.SetCandidate([]string{"new_c1"})
 	message.SetTargetID("new_target")
