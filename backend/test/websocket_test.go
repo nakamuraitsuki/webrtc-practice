@@ -9,13 +9,13 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 
-	"example.com/webrtc-practice/internal/handler"
 	"example.com/webrtc-practice/internal/infrastructure/factory_impl"
 	"example.com/webrtc-practice/internal/infrastructure/repository_impl"
 	offerservice "example.com/webrtc-practice/internal/infrastructure/service_impl/offer_service"
 	websocketbroadcast "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_broadcast"
 	websocketmanager "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_manager"
 	websocketupgrader "example.com/webrtc-practice/internal/infrastructure/service_impl/websocket_upgrader"
+	"example.com/webrtc-practice/internal/interface/handler"
 	"example.com/webrtc-practice/internal/usecase"
 )
 
@@ -62,7 +62,7 @@ func TestWebsocketHandler_E2E_Real(t *testing.T) {
 		// 少し待機して処理が安定するようにする
 		time.Sleep(100 * time.Millisecond)
 
-		testConnectMessage1 :=`{
+		testConnectMessage1 := `{
 			"id": "client1",
 			"type": "connect",
 			"sdp": "",
@@ -70,7 +70,7 @@ func TestWebsocketHandler_E2E_Real(t *testing.T) {
 			"target_id": ""
 		}`
 
-		testOfferMessage1 :=`{
+		testOfferMessage1 := `{
 			"id": "client1",
 			"type": "offer",
 			"sdp": "sdp1",
@@ -78,7 +78,7 @@ func TestWebsocketHandler_E2E_Real(t *testing.T) {
 			"target_id": ""
 		}`
 
-		testConnectMessage2 :=`{
+		testConnectMessage2 := `{
 			"id": "client2",
 			"type": "connect",
 			"sdp": "",
@@ -89,7 +89,6 @@ func TestWebsocketHandler_E2E_Real(t *testing.T) {
 		err = conn1.WriteMessage(websocket.TextMessage, []byte(testConnectMessage1))
 		assert.NoError(t, err)
 
-		
 		conn1.SetReadDeadline(time.Now().Add(2 * time.Second))
 		// client1がフィードバックメッセージを受け取れているか確認
 		_, msg1, err := conn1.ReadMessage()
@@ -104,7 +103,7 @@ func TestWebsocketHandler_E2E_Real(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		err = conn2.WriteMessage(websocket.TextMessage, []byte(testConnectMessage2))
 		assert.NoError(t, err)
-		
+
 		conn2.SetReadDeadline(time.Now().Add(2 * time.Second))
 		// client2がclient1からのofferを受け取れているか確認
 		_, msg2, err := conn2.ReadMessage()

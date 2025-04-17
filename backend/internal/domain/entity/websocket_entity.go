@@ -75,10 +75,6 @@ func (m *Message) SetID(id string) {
 	m.id = id
 }
 
-func (m *Message) SetType(messageType string) {
-	m.msgType = messageType
-}
-
 func (m *Message) SetSDP(sdp string) {
 	m.sdp = sdp
 }
